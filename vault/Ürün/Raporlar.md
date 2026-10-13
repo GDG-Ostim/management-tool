@@ -6,6 +6,9 @@ ozet: "Tekil görev sayımı, teslim zamanı ve rol kapsamına göre temel rapor
 ---
 # Raporlar
 
+## Uygulama durumu
+`apps/api/src/reports.ts` tek rapor servisidir. `/api/reports/me` herkese; `/api/reports/users/:id` kişinin kendisine, başkana ve yalnız başkanı olduğu ortak komiteler kapsamında komite başkanına açıktır (diğerleri 404). `/api/reports/committees/:id` komite başkanı ve başkana (üye 403), `/api/reports/overview` yalnız başkana açıktır. Yanıtlar `summary` (completed, onTime, late, undated, openOverdue, overdueTotal, inReview, open), kırılımlar ve görev satırlarını (`timing`, son teslim, ret/yeniden açma sayısı) döndürür. Çıktı bağlantıları #11 ile satırlara eklenecek; ekranlar #14 kapsamındadır. Testler bu nottaki örnekleri birebir doğrular.
+
 İlk sürümde tarih/dönem filtreleri, puanlama ve liderlik tablosu yoktur. Raporlar mevcut veri üzerinden kümülatif görünür. Kişisel profil ad, komiteler ve kapsam dahilindeki görev/çıktı listesini gösterir; üyelerin birbirinin performans sayfasını görmesi gerekmez.
 
 ## Sayımlar
