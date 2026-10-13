@@ -7,7 +7,7 @@ ozet: "Yeni oturum için kısa bağlam ve mevcut geliştirme durumu."
 # AI Başlangıç
 
 - GDG Management Tool: tek topluluğun iç komite/görev aracı; public kod, Türkçe ürün.
-- Plan hazır; kimlik altyapısı, kapalı giriş, davet akışı, responsive dashboard, dört şeffaf maskot pozu ve maskotlu tanıtım geliştirildi. Güncel iş durumu GitHub Project/Issues'ta.
+- Plan hazır; kimlik altyapısı, kapalı giriş, davet akışı, responsive dashboard, dört şeffaf maskot pozu, maskotlu tanıtım ve kullanıcı yönetimi ekranı geliştirildi. Güncel iş durumu GitHub Project/Issues'ta.
 - React + Express + Better Auth + better-sqlite3; minimal shadcn/ui dashboard; tek Docker servisi.
 - Başkan global; komite başkanı komiteye bağlı; üye yalnız kendi görevini değiştirir. Üye kendi komitesinin bütün işlerini okur.
 - İnceleme onaylı tamamlama; rapor teslim zamanına dayanır. Ayrı audit ekranı yok.

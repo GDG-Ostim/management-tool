@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import {
   ArrowLeft, ArrowRight, BarChart3, CheckCircle2, ChevronDown, CircleUserRound, Clock3, FolderKanban,
-  LayoutDashboard, ListTodo, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
+  LayoutDashboard, ListTodo, LockKeyhole, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
 } from 'lucide-react';
 import { authClient } from './auth-client';
 import { Avatar, Button, Card, EmptyState } from './ui';
+import { Users } from './Users';
 
 type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null };
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
@@ -137,6 +138,17 @@ function OnboardingDialog({ open, admin, pending, error, finish, close }: { open
   </dialog>;
 }
 
+function Forbidden({ title }: { title: string }) {
+  return <><div className="page-title-row"><div><h1>{title}</h1></div></div>
+    <Card><EmptyState icon={<LockKeyhole size={23} />} title="Bu alana erişimin yok" description="Bu sayfa yalnız başkan rolündeki hesaplar için açıktır." action={<Button onClick={() => location.assign('/')}>Genel Bakış’a dön</Button>} /></Card></>;
+}
+
+function Page({ me, title }: { me: Me; title: string }) {
+  if (location.pathname === '/') return <Overview me={me} />;
+  if (location.pathname === '/kullanicilar') return me.role === 'super_admin' ? <Users me={me} /> : <Forbidden title={title} />;
+  return <Placeholder title={title} />;
+}
+
 function Placeholder({ title }: { title: string }) {
   return <><div className="page-title-row"><div><h1>{title}</h1><p>Bu alanın temel yerleşimi hazır. İçerik ilgili geliştirme işiyle bağlanacak.</p></div></div>
     <Card><EmptyState icon={<FolderKanban size={24} />} title={`${title} yakında hazır`} description="Menü ve responsive çalışma alanı kullanılabilir; bu ekranın iş akışı sonraki issue’da tamamlanacak." /></Card></>;
@@ -174,7 +186,7 @@ export function Dashboard({ me }: { me: Me }) {
     <Sidebar me={me} mobileOpen={mobileOpen} closeMobile={() => setMobileOpen(false)} openOnboarding={() => { setOnboardingError(null); setOnboardingOpen(true); }} />
     <div className="workspace-main">
       <header className="mobile-bar"><Button size="icon" variant="ghost" aria-label="Menüyü aç" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={21} /></Button><Brand /><Avatar name={me.name} size="small" /></header>
-      <main className="workspace-content">{location.pathname === '/' ? <Overview me={me} /> : <Placeholder title={title} />}</main>
+      <main className="workspace-content"><Page me={me} title={title} /></main>
     </div>
     <OnboardingDialog open={onboardingOpen} admin={me.role === 'super_admin'} pending={onboardingPending} error={onboardingError} finish={completeOnboarding} close={closeOnboarding} />
   </div>;
