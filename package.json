@@ -20,7 +20,8 @@
     "build": "npm run typecheck && npm run build -w @gdg/api && npm run build -w @gdg/web",
     "typecheck": "tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
     "start": "node --env-file-if-exists=.env apps/api/dist/server.js",
-    "test": "npm run test:tooling && npm run test -w @gdg/api"
+    "test": "npm run test:tooling && npm run test -w @gdg/api",
+    "test:e2e": "npm run build -w @gdg/web && playwright test -c e2e/playwright.config.ts"
   },
   "engines": {
     "node": ">=22.12.0"

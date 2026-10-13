@@ -203,3 +203,6 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .comment-form, .comment-edit { display: grid; gap: 6px; }.comment-form textarea, .comment-edit textarea { min-height: 0; font-size: 13px; }.comment-form .ui-button { justify-self: end; }.comment-edit > span { display: flex; justify-content: flex-end; gap: 6px; }
 .report-links { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; }.report-links a { color: #1967d2; font-size: 12px; font-weight: 600; text-decoration: none; }.report-links a:hover { text-decoration: underline; }
 @media (max-width: 860px) { .task-layout { grid-template-columns: 1fr; }.task-layout > .task-form { border-right: 0; border-bottom: 1px solid #eceef0; }.link-form { grid-template-columns: 1fr; } }
+/* Short screens (landscape phones, small windows) keep the account menu reachable. */
+.workspace-sidebar { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }.sidebar-nav { flex: 1 0 auto; }.sidebar-help, .sidebar-footer { flex: 0 0 auto; }
+.activity-card > header a { flex: 0 0 auto; white-space: nowrap; }
