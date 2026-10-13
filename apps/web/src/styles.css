@@ -94,7 +94,7 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .toast > span { flex: 1; }.toast.has-image { align-items: center; }.toast.has-image img { width: 46px; height: 46px; margin: -6px 0; object-fit: contain; }
 
 .board-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }.board-toolbar .search-field { width: min(300px, 100%); }.board-select select { min-width: 190px; min-height: 38px; font-size: 13px; }
-.board { display: grid; grid-template-columns: repeat(4, minmax(250px, 1fr)); gap: 14px; align-items: start; }
+.board { display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 14px; align-items: start; }
 .board-column { display: flex; min-width: 0; flex-direction: column; padding: 12px; border: 1px solid #e1e4e8; border-radius: 12px; background: #eef0f2; transition: border-color .15s ease, background .15s ease; }
 .board-column > header { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 12px; }.column-count { color: #70757a; font-size: 12px; font-weight: 700; }
 .board-column.can-drop { border-style: dashed; border-color: #aecbfa; }.board-column.is-over { border-color: #4285f4; background: #e8f0fe; }
@@ -116,7 +116,8 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .panel-subtitle { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 13px; }.panel-subtitle span { color: #8a9096; font-weight: 600; }.panel-empty { margin: 0; padding: 18px 0; color: #7a8087; font-size: 13px; }
 .member-list { display: grid; margin: 0; padding: 0; list-style: none; }.member-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f1f3; }.member-list li.is-inactive .user-cell { opacity: .6; }.member-controls { display: flex; align-items: center; gap: 4px; }.member-controls select { min-height: 36px; width: 160px; font-size: 13px; }
 .member-add { display: grid; grid-template-columns: minmax(0, 1fr) 160px auto; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eceef0; }.member-add select { min-height: 40px; font-size: 13px; }
-@media (max-width: 1180px) { .board { grid-template-columns: repeat(4, minmax(260px, 82vw)); scroll-snap-type: x mandatory; }.board-column { scroll-snap-align: start; } }
+.board { scroll-snap-type: x proximity; }.board-column { scroll-snap-align: start; }
+@media (max-width: 760px) { .board { grid-template-columns: repeat(4, minmax(260px, 82vw)); scroll-snap-type: x mandatory; } }
 @media (max-width: 900px) { .committee-layout { grid-template-columns: 1fr; }.committee-list { grid-auto-flow: column; grid-auto-columns: minmax(180px, 1fr); overflow-x: auto; } }
 @media (max-width: 760px) {
   .board-toolbar { align-items: stretch; flex-direction: column; }.board-toolbar .search-field, .board-select select { width: 100%; }
@@ -136,8 +137,8 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .scroll-fade-button.is-start { left: 8px; }.scroll-fade-button.is-end { right: 8px; }
 .scroll-fade.has-start .scroll-fade-button.is-start, .scroll-fade.has-end .scroll-fade-button.is-end { opacity: 1; visibility: visible; }
 @media (hover: none) { .scroll-fade-button { display: none; } }
-.board.scroll-fade-viewport { overflow-x: visible; }
-@media (max-width: 1180px) { .board.scroll-fade-viewport { overflow-x: auto; padding-bottom: 10px; } }
+.board.scroll-fade-viewport { padding-bottom: 10px; }
+.row-menu-popover.opens-up { top: auto; bottom: calc(100% + 4px); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes mascot-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @media (max-height: 680px) and (min-width: 761px) { .sidebar-nav { margin-top: 18px; }.sidebar-help { min-height: 0; padding-right: 14px; }.sidebar-help img { display: none; } }

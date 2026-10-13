@@ -49,10 +49,21 @@ function CardMenu({ task, me, move }: { task: Task; me: Me; move(status: TaskSta
     document.addEventListener('pointerdown', close); document.addEventListener('keydown', close);
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close); };
   }, [open]);
+  const [up, setUp] = useState(false);
   if (!task.permissions.moves.length) return null;
+  const toggle = () => {
+    const anchor = ref.current;
+    if (!open && anchor) {
+      // The board scrolls horizontally, which also clips vertically; open upward when space runs out.
+      const bounds = anchor.closest('.scroll-fade-viewport')?.getBoundingClientRect();
+      const floor = Math.min(bounds?.bottom ?? innerHeight, innerHeight);
+      setUp(floor - anchor.getBoundingClientRect().bottom < task.permissions.moves.length * 40 + 20);
+    }
+    setOpen(value => !value);
+  };
   return <div className="row-menu" ref={ref} onClick={event => event.stopPropagation()}>
-    <Button size="icon" variant="ghost" className="card-menu-button" aria-label={`${task.title} durumunu değiştir`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(value => !value)}><MoreHorizontal size={17} /></Button>
-    {open && <div className="row-menu-popover" role="menu">
+    <Button size="icon" variant="ghost" className="card-menu-button" aria-label={`${task.title} durumunu değiştir`} aria-haspopup="menu" aria-expanded={open} onClick={toggle}><MoreHorizontal size={17} /></Button>
+    {open && <div className={up ? 'row-menu-popover opens-up' : 'row-menu-popover'} role="menu">
       {task.permissions.moves.map(status => <button key={status} role="menuitem" className={status === 'in_progress' && task.status === 'in_review' && task.assigneeId !== me.id ? 'is-danger' : undefined}
         onClick={() => { setOpen(false); move(status); }}>{moveLabel(task, status, me)}</button>)}
     </div>}
