@@ -6,6 +6,8 @@ import {
 import { authClient } from './auth-client';
 import { Avatar, Button, Card, EmptyState } from './ui';
 import { Users } from './Users';
+import { Board } from './Board';
+import { Committees } from './Committees';
 
 type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null };
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
@@ -145,7 +147,9 @@ function Forbidden({ title }: { title: string }) {
 
 function Page({ me, title }: { me: Me; title: string }) {
   if (location.pathname === '/') return <Overview me={me} />;
+  if (location.pathname === '/panolar') return <Board me={me} />;
   if (location.pathname === '/kullanicilar') return me.role === 'super_admin' ? <Users me={me} /> : <Forbidden title={title} />;
+  if (location.pathname === '/komiteler') return me.role === 'super_admin' ? <Committees /> : <Forbidden title={title} />;
   return <Placeholder title={title} />;
 }
 

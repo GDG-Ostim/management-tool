@@ -2,10 +2,9 @@ import { randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type Database from 'better-sqlite3';
 import type { Auth } from './auth.js';
+import { HttpError } from './errors.js';
 
-export class IdentityError extends Error {
-  constructor(public status: number, public code: string, message: string) { super(message); }
-}
+export class IdentityError extends HttpError {}
 
 export async function bootstrap(auth: Auth, db: Database.Database, input: { email?: string; name?: string; passwordFile?: string }) {
   if (db.prepare("SELECT 1 FROM app_settings WHERE key = 'bootstrap_completed'").get()) return { created: false };

@@ -6,6 +6,9 @@ import { openDatabase, canSignIn } from './database.js';
 import { createAuth } from './auth.js';
 import { createIdentityService, IdentityError } from './identity.js';
 import { createMailer, type Mailer } from './mail.js';
+import { HttpError } from './errors.js';
+import { registerCommitteeRoutes } from './committees.js';
+import { registerTaskRoutes } from './tasks.js';
 
 function throttle(max: number, windowMs: number): RequestHandler {
   const buckets = new Map<string, { count: number; until: number }>();
@@ -128,13 +131,15 @@ export async function createApplication(config: Config, mailer: Mailer = createM
   app.post('/api/users/:id/invite', requireMember, requireAdmin, throttle(10, 60_000), async (req, res) => {
     res.json(await identity.invite(String(req.params.id)));
   });
+  registerCommitteeRoutes(app, db, { requireMember, requireAdmin });
+  registerTaskRoutes(app, db, { requireMember });
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'İşlem bulunamadı.' } }));
   if (config.production) {
     app.use(express.static(resolve('apps/web/dist')));
     app.get('/{*splat}', (_req, res) => res.sendFile(resolve('apps/web/dist/index.html')));
   }
   const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
-    if (error instanceof IdentityError) { res.status(error.status).json({ error: { code: error.code, message: error.message } }); return; }
+    if (error instanceof HttpError) { res.status(error.status).json({ error: { code: error.code, message: error.message }, ...(error.current ? { current: error.current } : {}) }); return; }
     if (error.type === 'entity.too.large' || error instanceof SyntaxError) { res.status(400).json({ error: { code: 'INVALID_BODY', message: 'İstek içeriği geçersiz.' } }); return; }
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'İşlem tamamlanamadı.' } });
   };

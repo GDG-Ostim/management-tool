@@ -59,3 +59,17 @@ export function Dialog({ open, title, description, onClose, busy = false, childr
     </>}
   </dialog>;
 }
+
+export type ToastMessage = { tone: 'success' | 'error'; text: string; image?: string } | null;
+
+export function Toast({ toast, close }: { toast: ToastMessage; close(): void }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(close, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, close]);
+  if (!toast) return null;
+  return <div className={`toast is-${toast.tone}${toast.image ? ' has-image' : ''}`} role={toast.tone === 'error' ? 'alert' : 'status'}>
+    {toast.image && <img src={toast.image} alt="" />}<span>{toast.text}</span><button aria-label="Bildirimi kapat" onClick={close}>×</button>
+  </div>;
+}
