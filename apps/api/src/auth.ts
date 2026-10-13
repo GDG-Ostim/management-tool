@@ -18,8 +18,10 @@ export async function createAuth(config: Config, db: Database.Database, mailer: 
       resetPasswordTokenExpiresIn: 3600, revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
         const now = new Date().toISOString();
+        const invitation = db.prepare('SELECT state FROM invitations WHERE user_id = ?').get(user.id) as { state: string } | undefined;
+        const kind = invitation && invitation.state !== 'accepted' ? 'invite' : 'reset';
         try {
-          await mailer.sendPasswordLink({ email: user.email, name: user.name, url });
+          await mailer.sendPasswordLink({ kind, email: user.email, name: user.name, url });
           db.prepare("UPDATE invitations SET state = 'sent', last_attempt_at = ?, sent_at = ? WHERE user_id = ? AND state != 'accepted'")
             .run(now, now, user.id);
         } catch (error) {
