@@ -82,9 +82,41 @@ export async function createApplication(config: Config, mailer: Mailer = createM
       .get(res.locals.user.id) as { onboardingCompletedAt: string };
     res.json(profile);
   });
+  type UserRow = { id: string; name: string; email: string; role: string; active: number; invitation: string; invitationSentAt: string | null; createdAt: string };
+  const userSelect = `SELECT u.id, u.name, u.email, u.role, p.active, i.state AS invitation, i.sent_at AS invitationSentAt, u.createdAt AS createdAt
+    FROM user u JOIN user_profiles p ON p.user_id=u.id JOIN invitations i ON i.user_id=u.id`;
+  const toUser = (row: UserRow) => ({ ...row, active: row.active === 1, createdAt: new Date(row.createdAt).toISOString() });
   app.get('/api/users', requireMember, requireAdmin, (_req, res) => {
-    res.json(db.prepare(`SELECT u.id, u.name, u.email, u.role, p.active, i.state AS invitation
-      FROM user u JOIN user_profiles p ON p.user_id=u.id JOIN invitations i ON i.user_id=u.id ORDER BY u.name LIMIT 100`).all());
+    res.json((db.prepare(`${userSelect} ORDER BY u.name COLLATE NOCASE LIMIT 500`).all() as UserRow[]).map(toUser));
+  });
+  app.patch('/api/users/:id', requireMember, requireAdmin, throttle(30, 60_000), (req, res) => {
+    const body = req.body as Record<string, unknown> | undefined;
+    const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
+    const { role, active } = body ?? {};
+    if (!keys.length || keys.some(key => key !== 'role' && key !== 'active')
+      || (role !== undefined && role !== 'super_admin' && role !== 'user') || (active !== undefined && typeof active !== 'boolean')) {
+      throw new IdentityError(400, 'INVALID_USER_UPDATE', 'Rol veya erişim bilgisi geçersiz.');
+    }
+    const id = String(req.params.id);
+    if (id === res.locals.user.id) throw new IdentityError(409, 'SELF_UPDATE', 'Kendi rolünü veya erişimini değiştiremezsin; başka bir başkandan iste.');
+    const updated = db.transaction(() => {
+      const current = db.prepare(`${userSelect} WHERE u.id = ?`).get(id) as UserRow | undefined;
+      if (!current) throw new IdentityError(404, 'NOT_FOUND', 'Kullanıcı bulunamadı.');
+      const nextRole = (role as string | undefined) ?? current.role;
+      const nextActive = (active as boolean | undefined) ?? current.active === 1;
+      const losesAdmin = current.role === 'super_admin' && current.active === 1 && (nextRole !== 'super_admin' || !nextActive);
+      if (losesAdmin) {
+        const others = db.prepare(`SELECT count(*) AS count FROM user u JOIN user_profiles p ON p.user_id=u.id JOIN invitations i ON i.user_id=u.id
+          WHERE u.role='super_admin' AND p.active=1 AND i.state='accepted' AND u.id != ?`).get(id) as { count: number };
+        if (!others.count) throw new IdentityError(409, 'LAST_ADMIN', 'Son aktif başkanın yetkisi kaldırılamaz veya hesabı pasifleştirilemez.');
+      }
+      db.prepare('UPDATE user SET role = ?, updatedAt = ? WHERE id = ?').run(nextRole, new Date().toISOString(), id);
+      db.prepare('UPDATE user_profiles SET active = ? WHERE user_id = ?').run(nextActive ? 1 : 0, id);
+      // Deactivation ends existing sessions; access is also re-checked on every request.
+      if (!nextActive) db.prepare('DELETE FROM session WHERE userId = ?').run(id);
+      return db.prepare(`${userSelect} WHERE u.id = ?`).get(id) as UserRow;
+    })();
+    res.json(toUser(updated));
   });
   app.post('/api/users', requireMember, requireAdmin, throttle(20, 60_000), async (req, res) => {
     const { name, email, ...extra } = req.body ?? {};

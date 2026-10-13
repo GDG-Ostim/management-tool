@@ -19,6 +19,8 @@ ozet: "MVP ekran listesi ve her ekranın işlevi."
 | Raporlar | Başkan için genel/komite/kişi; komite başkanı için kendi komiteleri ve üyeleri |
 | Tanıtım | İlk girişte atlanabilir kısa maskot rehberi; sonradan tekrar açılabilir |
 
+Kullanıcılar uygulama durumu: başkan tablo/kart listesinde kişi, rol, davet/aktiflik durumu ve eklenme tarihini görür; Tümü/Aktif/Davetli/Pasif filtresi ve ad/e-posta araması vardır. Kullanıcı ekleme diyaloğu daveti hemen gönderir; gönderim başarısızsa hesap korunur ve satır menüsünden yeniden denenir. Başkan yap/Üye yap ve pasifleştirme onay ister; sonuç kısa toast ile bildirilir. Kendi satırında işlem menüsü yoktur. Komite üyeliği ataması #7 komite yönetimiyle bağlanır. Başkan olmayan kullanıcı bu adreste yetkisiz durumu görür.
+
 Üyeye diğer kişilerin rapor linki sunulmaz. Çok komiteli üyede board seçimi görünür; başkan olmadığı komitede yönetim eylemi görünmez.
 
 Tanıtım adımları: panonu seç → görevi aç/ilerlet → incelemeye gönder → profilinden çıktını gör. Başkan rolünde kullanıcı ve komite yönetimi ayrıca kısa açıklanır. Tanıtım bitişi kullanıcı profilinde saklanır.
