@@ -6,6 +6,11 @@ ozet: "İlk başkan, kapalı kayıt, kullanıcı daveti ve Resend şifre akış�
 ---
 # Kimlik ve Kurulum
 
+## Uygulama durumu
+Better Auth, Express ve better-sqlite3 altyapısı kuruldu. Açık kayıt hem config hem HTTP allowlist ile kapalıdır. İdempotent bootstrap komutu şifreyi dosyadan okur. Başkan kullanıcı oluşturabilir, Resend üzerinden tek kullanımlık şifre belirleme bağlantısını gönderebilir ve başarısız gönderimi aynı hesap için tekrar deneyebilir.
+
+Türkçe giriş, şifremi unuttum ve şifre belirleme ekranları hazırdır. Davet kabul edilmeden uygulama oturumu açılamaz; şifre sıfırlanınca eski oturumlar iptal edilir. API entegrasyon testleri bootstrap, kapalı kayıt, davet, tek kullanımlık token, tekrar gönderim, genel reset cevabı ve origin korumasını doğrular.
+
 ## İlk başkan
 Önerilen uygulama: yalnız sunucuda çalışan idempotent bootstrap komutu. `BOOTSTRAP_ADMIN_EMAIL` ve `BOOTSTRAP_ADMIN_NAME` ortam değişkenidir. Başlangıç şifresi `BOOTSTRAP_ADMIN_PASSWORD_FILE` ile Docker secret dosyasından okunur; repoya veya loglara yazılmaz. E-posta/name secret sayılmaz; şifre kalıcı .env içinde tutulmaz.
 
@@ -28,7 +33,7 @@ Güvenli cookie, HTTPS, trustedOrigins, rate limit ve sabit uygulama origin'i. �
 Kullanıcı pasifleştirme/şifre değişikliği uygun oturumları iptal eder. App tarafında aktiflik her istekte kontrol edilir.
 
 ## Resend
-`RESEND_API_KEY`, `MAIL_FROM`, `BETTER_AUTH_SECRET`, `APP_URL`, `DATABASE_PATH` sunucu config'idir. Gerçek kullanıcılara e-posta için doğrulanmış sender domain gerekir; bu kurulumun uygulama issue'sunda yapılır. Bu planlama oturumunda gerçek mail gönderilmez.
+`RESEND_API_KEY`, `MAIL_FROM`, `BETTER_AUTH_SECRET`, `APP_URL`, `DATABASE_PATH` sunucu config'idir. Gerçek kullanıcılara e-posta için doğrulanmış sender domain gerekir. Yerel ve CI testlerinde sahte mail adapter'ı kullanılır; gerçek mail gönderilmez.
 Gönderim hatası yakalanır ve yöneticiye durum döner; reset tokenı/parola loglanmaz. Yerel testlerde sahte mail adapter'ı kullanılır.
 
 Kaynaklar: [[Sistem/Teknik Kaynaklar]].

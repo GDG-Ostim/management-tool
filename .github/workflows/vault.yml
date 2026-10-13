@@ -1,10 +1,28 @@
 name: Vault
-on: [push, pull_request]
+on:
+  pull_request:
+    paths:
+      - "vault/**"
+      - "scripts/**"
+      - "AGENTS.md"
+      - "package.json"
+      - ".github/workflows/vault.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "vault/**"
+      - "scripts/**"
+      - "AGENTS.md"
+      - "package.json"
+      - ".github/workflows/vault.yml"
 permissions:
   contents: read
 jobs:
   validate:
+    name: Validate docs
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
