@@ -71,7 +71,19 @@ describe('kapalı kayıt ve davet akışı', () => {
     adminCookie = cookie;
     const me = await request('/api/me', { headers: { cookie } });
     assert.equal(me.status, 200);
-    assert.deepEqual(await me.json(), { id: (await response.json()).user.id, name: 'Başkan', email: admin.email, role: 'super_admin' });
+    const userId = (await response.json()).user.id;
+    assert.deepEqual(await me.json(), { id: userId, name: 'Başkan', email: admin.email, role: 'super_admin', onboardingCompletedAt: null });
+
+    const invalidOnboarding = await request('/api/me/onboarding', { method: 'PATCH', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ completed: false }) });
+    assert.equal(invalidOnboarding.status, 400);
+    const completed = await request('/api/me/onboarding', { method: 'PATCH', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ completed: true }) });
+    assert.equal(completed.status, 200);
+    const completedAt = (await completed.json() as { onboardingCompletedAt: string }).onboardingCompletedAt;
+    assert.ok(Date.parse(completedAt));
+    const repeated = await request('/api/me/onboarding', { method: 'PATCH', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ completed: true }) });
+    assert.deepEqual(await repeated.json(), { onboardingCompletedAt: completedAt });
+    const refreshed = await request('/api/me', { headers: { cookie } });
+    assert.equal((await refreshed.json() as { onboardingCompletedAt: string }).onboardingCompletedAt, completedAt);
   });
 
   test('başkan kullanıcı davet eder; bağlantı tek kullanımlıdır ve hesabı etkinleştirir', async () => {

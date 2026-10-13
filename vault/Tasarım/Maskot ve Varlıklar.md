@@ -21,7 +21,7 @@ Kırmızı/bordo gövdeli, iri amber gözlü, kıvırcık yeleli küçük ejderh
 - Hafif kutlama pozu: görev onayı sonrası kısa geri bildirim. **Hazır.**
 - Basit boş durum pozu: henüz görev yok. **Hazır.**
 
-Onaylı dosyalar `apps/web/public/mascot/` içindedir. Brief, prompt ve kalite kaydı: [[Tasarım/Varlıklar/Maskot Pozları]]. Arayüz entegrasyonu #16 içinde yapılır.
+Onaylı dosyalar `apps/web/public/mascot/` içindedir. Brief, prompt ve kalite kaydı: [[Tasarım/Varlıklar/Maskot Pozları]]. Tanıtım, sidebar yardım alanı ve boş görev durumu entegrasyonu #16 ile yapıldı; kutlama pozu tanıtımın son adımında kullanılır, onay geri bildirimi inceleme akışıyla bağlanır.
 
 MVP'de seslendirme, video ve sürekli büyük animasyon şart değil. Gerekirse mevcut pozlara CSS ile küçük hareket verilir; reduced-motion desteklenir. Ekran kontrastı ve çalışma alanı karakterden önce gelir.
 

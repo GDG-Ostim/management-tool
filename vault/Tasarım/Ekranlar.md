@@ -23,4 +23,6 @@ ozet: "MVP ekran listesi ve her ekranın işlevi."
 
 Tanıtım adımları: panonu seç → görevi aç/ilerlet → incelemeye gönder → profilinden çıktını gör. Başkan rolünde kullanıcı ve komite yönetimi ayrıca kısa açıklanır. Tanıtım bitişi kullanıcı profilinde saklanır.
 
+Uygulama durumu: tanıtım ilk girişte modal olarak açılır; Atla, Kapat, Escape veya son adım `PATCH /api/me/onboarding` ile bitişi kaydeder. Kayıt başarısızsa diyalog açık kalır ve hata gösterilir. Sidebar'daki küçük maskotlu yardım alanı tanıtımı tekrar açar; tekrar açmak durumu değiştirmez. Maskot geçişi ve hover hareketi küçük CSS animasyonudur; reduced-motion tercihinde kapanır. Boş görev durumu boş durum pozunu kullanır.
+
 Her ekran Türkçedir. Başlığın üzerinde “workspace overview” gibi ek dekoratif satır yok. Referanslar [[Tasarım/Arayüz]] içindeki kurallarla yorumlanır.

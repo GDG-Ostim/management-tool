@@ -1,12 +1,12 @@
-import { useEffect, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import {
-  BarChart3, CheckCircle2, ChevronDown, CircleUserRound, Clock3, FolderKanban,
-  LayoutDashboard, ListTodo, LogOut, Menu, Settings2, UsersRound, X,
+  ArrowLeft, ArrowRight, BarChart3, CheckCircle2, ChevronDown, CircleUserRound, Clock3, FolderKanban,
+  LayoutDashboard, ListTodo, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
 } from 'lucide-react';
 import { authClient } from './auth-client';
 import { Avatar, Button, Card, EmptyState } from './ui';
 
-type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user' };
+type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null };
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 type NavItem = { href: string; label: string; icon: Icon; admin?: boolean };
 
@@ -31,7 +31,7 @@ function Brand() {
   </a>;
 }
 
-function Sidebar({ me, mobileOpen, closeMobile }: { me: Me; mobileOpen: boolean; closeMobile(): void }) {
+function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobileOpen: boolean; closeMobile(): void; openOnboarding(): void }) {
   const items = navigation.filter(item => !item.admin || me.role === 'super_admin');
   const currentPath = location.pathname;
   return <>
@@ -47,6 +47,11 @@ function Sidebar({ me, mobileOpen, closeMobile }: { me: Me; mobileOpen: boolean;
           <NavIcon size={19} strokeWidth={1.9} /><span>{label}</span>
         </a>)}</>}
       </nav>
+      <div className="sidebar-help">
+        <img src="/mascot/calm.png" alt="" />
+        <strong>Yardıma mı ihtiyacın var?</strong>
+        <button onClick={() => { closeMobile(); openOnboarding(); }}>Kısa tanıtımı aç</button>
+      </div>
       <div className="sidebar-footer">
         <details className="account-menu">
           <summary><Avatar name={me.name} /><span><strong>{me.name}</strong><small>{me.role === 'super_admin' ? 'Başkan' : 'Üye'}</small></span><ChevronDown size={16} /></summary>
@@ -79,7 +84,7 @@ function Overview({ me }: { me: Me }) {
     <div className="overview-grid">
       <Card className="activity-card">
         <header><div><h2>Yaklaşan işler</h2><p>Üzerine atanan ve tarihi yaklaşan görevler</p></div><a href="/panolar">Tümünü gör</a></header>
-        <EmptyState icon={<ListTodo size={23} />} title="Henüz görev yok" description="Sana atanan işler burada son teslim tarihine göre listelenecek." action={<Button onClick={() => location.assign('/panolar')}>Panoyu aç</Button>} />
+        <EmptyState icon={<img className="empty-mascot" src="/mascot/empty.png" alt="" />} title="Henüz görev yok" description="Sana atanan işler burada son teslim tarihine göre listelenecek." action={<Button onClick={() => location.assign('/panolar')}>Panoyu aç</Button>} />
       </Card>
       <Card className="committee-card">
         <header><h2>Komiteler</h2><p>Dahil olduğun ekiplerin kısa durumu</p></header>
@@ -89,6 +94,49 @@ function Overview({ me }: { me: Me }) {
   </>;
 }
 
+const onboardingSteps = [
+  { image: '/mascot/welcome.png', title: 'Çalışma alanına hoş geldin', description: 'Komiteler, görevler ve ekip çıktıları tek bir sade alanda buluşur.' },
+  { image: '/mascot/calm.png', title: 'Panonu seç', description: 'Dahil olduğun komitenin panosunu aç; bütün işleri ve sorumluları birlikte gör.' },
+  { image: '/mascot/empty.png', title: 'Görevini ilerlet', description: 'Kendi görevini güncelle, çıktını ekle ve hazır olduğunda incelemeye gönder.' },
+  { image: '/mascot/celebrate.png', title: 'Çıktılarını görünür kıl', description: 'Tamamlanan işler profil ve raporlarda birikir; ekip emeği somut şekilde görünür olur.' },
+];
+
+function OnboardingDialog({ open, admin, pending, error, finish, close }: { open: boolean; admin: boolean; pending: boolean; error: string | null; finish(): void; close(): void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [step, setStep] = useState(0);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) { setStep(0); dialog.showModal(); }
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+  const item = onboardingSteps[step];
+  const isLast = step === onboardingSteps.length - 1;
+  return <dialog ref={dialogRef} className="onboarding-dialog" aria-labelledby="onboarding-title" onCancel={event => { event.preventDefault(); if (!pending) close(); }}>
+    <button className="dialog-close" aria-label="Tanıtımı kapat" onClick={close} disabled={pending}><X size={20} /></button>
+    <div className="onboarding-visual"><img key={item.image} src={item.image} alt="" /></div>
+    <div className="onboarding-copy">
+      <span className="step-count">{step + 1} / {onboardingSteps.length}</span>
+      <h2 id="onboarding-title">{item.title}</h2>
+      <p>{item.description}</p>
+      {admin && step === 0 && <p className="admin-note"><Sparkles size={16} />Başkan olarak Kullanıcılar ve Komiteler alanlarını da yönetebilirsin.</p>}
+      {error && <p className="dialog-error" role="alert">{error}</p>}
+      <div className="step-dots" aria-hidden="true">
+        {onboardingSteps.map((_, index) => <i key={index} className={index === step ? 'is-active' : undefined} />)}
+      </div>
+      <div className="onboarding-actions">
+        <Button variant="ghost" onClick={close} disabled={pending}>{step === 0 ? 'Atla' : 'Kapat'}</Button>
+        <span>
+          {step > 0 && <Button size="icon" aria-label="Önceki adım" onClick={() => setStep(value => value - 1)} disabled={pending}><ArrowLeft size={18} /></Button>}
+          <Button variant="primary" autoFocus onClick={() => isLast ? finish() : setStep(value => value + 1)} disabled={pending}>
+            {pending ? 'Kaydediliyor…' : isLast ? 'Çalışma alanına geç' : <>Devam et<ArrowRight size={17} /></>}
+          </Button>
+        </span>
+      </div>
+    </div>
+  </dialog>;
+}
+
 function Placeholder({ title }: { title: string }) {
   return <><div className="page-title-row"><div><h1>{title}</h1><p>Bu alanın temel yerleşimi hazır. İçerik ilgili geliştirme işiyle bağlanacak.</p></div></div>
     <Card><EmptyState icon={<FolderKanban size={24} />} title={`${title} yakında hazır`} description="Menü ve responsive çalışma alanı kullanılabilir; bu ekranın iş akışı sonraki issue’da tamamlanacak." /></Card></>;
@@ -96,6 +144,10 @@ function Placeholder({ title }: { title: string }) {
 
 export function Dashboard({ me }: { me: Me }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [onboardingOpen, setOnboardingOpen] = useState(!me.onboardingCompletedAt);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(!!me.onboardingCompletedAt);
+  const [onboardingPending, setOnboardingPending] = useState(false);
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
   useEffect(() => {
     if (!mobileOpen) return;
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setMobileOpen(false); };
@@ -103,13 +155,28 @@ export function Dashboard({ me }: { me: Me }) {
     document.body.classList.add('has-open-menu');
     return () => { document.removeEventListener('keydown', close); document.body.classList.remove('has-open-menu'); };
   }, [mobileOpen]);
+  async function closeOnboarding() {
+    if (onboardingCompleted) { setOnboardingOpen(false); return; }
+    await completeOnboarding();
+  }
+  async function completeOnboarding() {
+    setOnboardingPending(true); setOnboardingError(null);
+    try {
+      const response = await fetch('/api/me/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed: true }) });
+      if (!response.ok) throw new Error('save');
+      setOnboardingCompleted(true); setOnboardingOpen(false);
+    } catch {
+      setOnboardingError('Tanıtım durumu kaydedilemedi. Bağlantını kontrol edip yeniden dene.');
+    } finally { setOnboardingPending(false); }
+  }
   const title = pageNames[location.pathname] ?? 'Sayfa bulunamadı';
   return <div className="workspace">
-    <Sidebar me={me} mobileOpen={mobileOpen} closeMobile={() => setMobileOpen(false)} />
+    <Sidebar me={me} mobileOpen={mobileOpen} closeMobile={() => setMobileOpen(false)} openOnboarding={() => { setOnboardingError(null); setOnboardingOpen(true); }} />
     <div className="workspace-main">
       <header className="mobile-bar"><Button size="icon" variant="ghost" aria-label="Menüyü aç" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={21} /></Button><Brand /><Avatar name={me.name} size="small" /></header>
       <main className="workspace-content">{location.pathname === '/' ? <Overview me={me} /> : <Placeholder title={title} />}</main>
     </div>
+    <OnboardingDialog open={onboardingOpen} admin={me.role === 'super_admin'} pending={onboardingPending} error={onboardingError} finish={completeOnboarding} close={closeOnboarding} />
   </div>;
 }
 

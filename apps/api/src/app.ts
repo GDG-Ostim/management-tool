@@ -66,7 +66,21 @@ export async function createApplication(config: Config, mailer: Mailer = createM
   };
   app.get('/api/me', requireMember, (_req, res) => {
     const { id, name, email, role } = res.locals.user;
-    res.json({ id, name, email, role });
+    const profile = db.prepare('SELECT onboarding_completed_at AS onboardingCompletedAt FROM user_profiles WHERE user_id = ?')
+      .get(id) as { onboardingCompletedAt: string | null };
+    res.json({ id, name, email, role, onboardingCompletedAt: profile.onboardingCompletedAt });
+  });
+  app.patch('/api/me/onboarding', requireMember, (req, res) => {
+    const body = req.body as unknown;
+    if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || (body as { completed?: unknown }).completed !== true) {
+      res.status(400).json({ error: { code: 'INVALID_ONBOARDING', message: 'Tanıtım durumu geçersiz.' } }); return;
+    }
+    const now = new Date().toISOString();
+    db.prepare('UPDATE user_profiles SET onboarding_completed_at = COALESCE(onboarding_completed_at, ?) WHERE user_id = ?')
+      .run(now, res.locals.user.id);
+    const profile = db.prepare('SELECT onboarding_completed_at AS onboardingCompletedAt FROM user_profiles WHERE user_id = ?')
+      .get(res.locals.user.id) as { onboardingCompletedAt: string };
+    res.json(profile);
   });
   app.get('/api/users', requireMember, requireAdmin, (_req, res) => {
     res.json(db.prepare(`SELECT u.id, u.name, u.email, u.role, p.active, i.state AS invitation
