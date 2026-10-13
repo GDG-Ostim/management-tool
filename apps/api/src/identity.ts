@@ -38,12 +38,11 @@ export function createIdentityService(auth: Auth, db: Database.Database, appUrl:
     db.prepare('UPDATE invitations SET last_attempt_at = ? WHERE user_id = ?').run(new Date().toISOString(), userId);
     try {
       await auth.api.requestPasswordReset({ body: { email: row.email, redirectTo: `${appUrl}/sifre-belirle` } });
-      // Do not overwrite an acceptance that raced with the provider response.
-      db.prepare("UPDATE invitations SET state = 'sent', sent_at = ? WHERE user_id = ? AND state != 'accepted'")
-        .run(new Date().toISOString(), userId);
+      const state = (db.prepare('SELECT state FROM invitations WHERE user_id = ?').get(userId) as { state: string }).state;
+      if (state === 'failed') throw new IdentityError(502, 'INVITATION_FAILED', 'Hesap korundu, davet gönderilemedi. Yeniden deneyebilirsiniz.');
       return { id: userId, invitation: 'sent' as const };
     } catch {
-      db.prepare("UPDATE invitations SET state = 'failed' WHERE user_id = ? AND state != 'accepted'").run(userId);
+      db.prepare("UPDATE invitations SET state = 'failed' WHERE user_id = ? AND state NOT IN ('accepted', 'failed')").run(userId);
       throw new IdentityError(502, 'INVITATION_FAILED', 'Hesap korundu, davet gönderilemedi. Yeniden deneyebilirsiniz.');
     }
   }

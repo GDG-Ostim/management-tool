@@ -17,7 +17,16 @@ export async function createAuth(config: Config, db: Database.Database, mailer: 
       enabled: true, disableSignUp: true, minPasswordLength: 12, maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 3600, revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
-        await mailer.sendPasswordLink({ email: user.email, name: user.name, url });
+        const now = new Date().toISOString();
+        try {
+          await mailer.sendPasswordLink({ email: user.email, name: user.name, url });
+          db.prepare("UPDATE invitations SET state = 'sent', last_attempt_at = ?, sent_at = ? WHERE user_id = ? AND state != 'accepted'")
+            .run(now, now, user.id);
+        } catch (error) {
+          db.prepare("UPDATE invitations SET state = 'failed', last_attempt_at = ? WHERE user_id = ? AND state != 'accepted'")
+            .run(now, user.id);
+          throw error;
+        }
       },
       onPasswordReset: async ({ user }) => {
         db.prepare("UPDATE invitations SET state = 'accepted', accepted_at = ? WHERE user_id = ?")
