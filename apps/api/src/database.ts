@@ -79,6 +79,32 @@ export function migrateWork(db: Database.Database) {
     `);
     db.prepare('INSERT OR IGNORE INTO schema_migrations VALUES (?, ?)').run('002-committees-tasks', new Date().toISOString());
   })();
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_comments (
+        id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(id), author_id TEXT NOT NULL REFERENCES user(id),
+        body TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS task_comments_task ON task_comments(task_id, created_at);
+      CREATE TABLE IF NOT EXISTS task_checklist_items (
+        id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(id), text TEXT NOT NULL,
+        checked INTEGER NOT NULL DEFAULT 0 CHECK (checked IN (0, 1)), position INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS task_checklist_task ON task_checklist_items(task_id, position);
+      CREATE TABLE IF NOT EXISTS task_links (
+        id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(id), url TEXT NOT NULL, label TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS task_links_task ON task_links(task_id, created_at);
+      CREATE TABLE IF NOT EXISTS labels (
+        id TEXT PRIMARY KEY, committee_id TEXT NOT NULL REFERENCES committees(id), name TEXT NOT NULL COLLATE NOCASE,
+        UNIQUE (committee_id, name)
+      );
+      CREATE TABLE IF NOT EXISTS task_labels (
+        task_id TEXT NOT NULL REFERENCES tasks(id), label_id TEXT NOT NULL REFERENCES labels(id), PRIMARY KEY (task_id, label_id)
+      );
+    `);
+    db.prepare('INSERT OR IGNORE INTO schema_migrations VALUES (?, ?)').run('003-task-details', new Date().toISOString());
+  })();
 }
 
 export function canSignIn(db: Database.Database, userId: string): boolean {

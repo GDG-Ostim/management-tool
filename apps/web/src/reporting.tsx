@@ -90,6 +90,7 @@ export function ReportTasks({ title, description, tasks, showPerson = false, sho
         <thead><tr><th scope="col">Görev</th>{showPerson && <th scope="col">Kişi</th>}<th scope="col">Durum</th><th scope="col">Son tarih</th><th scope="col">Teslim</th><th scope="col">Zamanlama</th></tr></thead>
         <tbody>{visible.map(task => <tr key={task.id}>
           <td><strong>{task.title}</strong>{showCommittee && <small>{task.committeeName}</small>}
+            {task.links.length > 0 && <span className="report-links">{task.links.map((link, index) => <a key={`${index}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer nofollow">{link.label || new URL(link.url).host}</a>)}</span>}
             {(task.rejections > 0 || task.reopens > 0) && <small className="history-note">{[task.rejections && `${task.rejections} ret`, task.reopens && `${task.reopens} yeniden açma`].filter(Boolean).join(' · ')}</small>}</td>
           {showPerson && <td data-label="Kişi">{task.personName}</td>}
           <td data-label="Durum"><StatusBadge status={task.status} /></td>

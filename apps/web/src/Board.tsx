@@ -3,7 +3,7 @@ import { CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Sea
 import { api, ApiError, errorMessage, type Committee, type CommitteeDetail, type Priority, type Task, type TaskStatus } from './api';
 import { Avatar, Badge, Button, Dialog, EmptyState, ScrollFade, Toast, type ToastMessage } from './ui';
 import type { Me } from './Dashboard';
-import { ReviewTimeline } from './ReviewTimeline';
+import { TaskDetails } from './TaskDetails';
 
 const columns: Array<{ status: TaskStatus; label: string; tone: string }> = [
   { status: 'todo', label: 'Yapılacak', tone: 'gray' },
@@ -148,36 +148,37 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
     : task?.status === 'done' ? 'Tamamlanan görev kilitlidir; düzeltme için komite başkanı yeniden açmalı.'
     : task && !editable ? 'Bu görevi yalnız sorumlusu veya komite başkanı düzenleyebilir.' : null;
 
-  return <Dialog open={open} title={task ? (editable ? 'Görevi düzenle' : 'Görev') : 'Yeni görev'} description={task ? `${task.committeeName} · ${statusLabel[task.status]}` : 'Başlık ve sorumlu zorunludur; diğer alanlar isteğe bağlıdır.'} onClose={close} busy={pending}>
-    <form className="dialog-form task-form" onSubmit={submit} key={task ? `${task.id}-${task.version}` : `new-${committeeId}`}>
-      {lockNote && <p className="form-note">{lockNote}</p>}
-      {!task && <label className="ui-field"><span>Komite</span>
-        <select className="ui-input" value={committeeId} onChange={event => setCommitteeId(event.target.value)} required>
-          {writable.map(committee => <option key={committee.id} value={committee.id}>{committee.name}</option>)}
-        </select></label>}
-      <label className="ui-field"><span>Başlık</span><input className="ui-input" name="title" required maxLength={160} defaultValue={task?.title} disabled={!editable} data-autofocus /></label>
-      <label className="ui-field"><span>Açıklama</span><textarea className="ui-input" name="description" rows={4} maxLength={10000} defaultValue={task?.description} disabled={!editable} placeholder="Kısa bağlam, beklenen çıktı veya bağlantılar" /></label>
-      <div className="form-grid">
-        <label className="ui-field"><span>Sorumlu</span>
-          {manage && editable
-            ? <select className="ui-input" name="assigneeId" defaultValue={task?.assigneeId ?? me.id} key={`${committeeId}-${members.length}`} required>
-                {!members.some(member => member.id === (task?.assigneeId ?? me.id)) && <option value="" disabled>Seç</option>}
-                {members.map(member => <option key={member.id} value={member.id}>{member.id === me.id ? `${member.name} (sen)` : member.name}</option>)}
-              </select>
-            : <input className="ui-input" value={task ? task.assigneeName : `${me.name} (sen)`} disabled readOnly />}
-        </label>
-        <label className="ui-field"><span>Öncelik</span>
-          <select className="ui-input" name="priority" defaultValue={task?.priority ?? 'normal'} disabled={!editable || (!!task && !manage)}>
-            {(Object.keys(priorityLabel) as Priority[]).map(value => <option key={value} value={value}>{priorityLabel[value]}</option>)}
-          </select></label>
-        <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task?.dueAt ?? null)} disabled={!editable || (!!task && !manage)} /></label>
-      </div>
-      {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
-      {task && <ReviewTimeline taskId={task.id} version={task.version} />}
-      {error && <p className="form-error" role="alert">{error}</p>}
-      <footer><Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
-        {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : 'Görevi oluştur'}</Button>}</footer>
-    </form>
+  const form = <form className="dialog-form task-form" onSubmit={submit} key={task ? `${task.id}-${task.version}` : `new-${committeeId}`}>
+    {lockNote && <p className="form-note">{lockNote}</p>}
+    {!task && <label className="ui-field"><span>Komite</span>
+      <select className="ui-input" value={committeeId} onChange={event => setCommitteeId(event.target.value)} required>
+        {writable.map(committee => <option key={committee.id} value={committee.id}>{committee.name}</option>)}
+      </select></label>}
+    <label className="ui-field"><span>Başlık</span><input className="ui-input" name="title" required maxLength={160} defaultValue={task?.title} disabled={!editable} data-autofocus /></label>
+    <label className="ui-field"><span>Açıklama</span><textarea className="ui-input" name="description" rows={4} maxLength={10000} defaultValue={task?.description} disabled={!editable} placeholder="Kısa bağlam, beklenen çıktı veya bağlantılar" /></label>
+    <div className="form-grid">
+      <label className="ui-field"><span>Sorumlu</span>
+        {manage && editable
+          ? <select className="ui-input" name="assigneeId" defaultValue={task?.assigneeId ?? me.id} key={`${committeeId}-${members.length}`} required>
+              {!members.some(member => member.id === (task?.assigneeId ?? me.id)) && <option value="" disabled>Seç</option>}
+              {members.map(member => <option key={member.id} value={member.id}>{member.id === me.id ? `${member.name} (sen)` : member.name}</option>)}
+            </select>
+          : <input className="ui-input" value={task ? task.assigneeName : `${me.name} (sen)`} disabled readOnly />}
+      </label>
+      <label className="ui-field"><span>Öncelik</span>
+        <select className="ui-input" name="priority" defaultValue={task?.priority ?? 'normal'} disabled={!editable || (!!task && !manage)}>
+          {(Object.keys(priorityLabel) as Priority[]).map(value => <option key={value} value={value}>{priorityLabel[value]}</option>)}
+        </select></label>
+      <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task?.dueAt ?? null)} disabled={!editable || (!!task && !manage)} /></label>
+    </div>
+    {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
+    {error && <p className="form-error" role="alert">{error}</p>}
+    <footer><Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
+      {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : 'Görevi oluştur'}</Button>}</footer>
+  </form>;
+
+  return <Dialog open={open} title={task ? (editable ? 'Görevi düzenle' : 'Görev') : 'Yeni görev'} description={task ? `${task.committeeName} · ${statusLabel[task.status]}` : 'Başlık ve sorumlu zorunludur; diğer alanlar isteğe bağlıdır.'} onClose={close} busy={pending} wide={!!task}>
+    {task ? <div className="task-layout">{form}<TaskDetails taskId={task.id} version={task.version} /></div> : form}
   </Dialog>;
 }
 

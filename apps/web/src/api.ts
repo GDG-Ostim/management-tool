@@ -28,6 +28,12 @@ export type Task = {
   returned: 'rejected' | 'reopened' | null;
   permissions: { edit: boolean; manage: boolean; moves: TaskStatus[] };
 };
+export type TaskDetails = {
+  labels: string[]; checklist: Array<{ id: string; text: string; checked: boolean }>;
+  links: Array<{ id: string; url: string; label: string; createdAt: string }>;
+  comments: Array<{ id: string; authorId: string; authorName: string; body: string; createdAt: string; updatedAt: string; mine: boolean }>;
+  committeeLabels: string[]; permissions: { edit: boolean; labels: boolean; comment: boolean };
+};
 export type ReviewHistory = {
   submissions: Array<{ id: string; submittedAt: string; submittedBy: string; assigneeName: string; dueAt: string | null; onTime: boolean | null;
     resolution: 'pending' | 'approved' | 'rejected' | 'withdrawn'; resolvedAt: string | null; resolvedBy: string | null; reason: string | null }>;
@@ -38,7 +44,7 @@ export type Summary = { completed: number; onTime: number; late: number; undated
 export type Timing = 'on_time' | 'late' | 'undated' | 'overdue' | null;
 export type ReportTask = {
   id: string; title: string; committeeId: string; committeeName: string; personId: string; personName: string;
-  status: TaskStatus; dueAt: string | null; submittedAt: string | null; completedAt: string | null; timing: Timing; rejections: number; reopens: number;
+  status: TaskStatus; dueAt: string | null; submittedAt: string | null; completedAt: string | null; timing: Timing; rejections: number; reopens: number; links: Array<{ url: string; label: string }>;
 };
 export type Breakdown = { id: string; name: string; summary: Summary };
 export type PersonReport = {
