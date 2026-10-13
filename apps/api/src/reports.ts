@@ -7,7 +7,7 @@ type Row = {
   id: string; title: string; committeeId: string; committeeName: string; assigneeId: string; assigneeName: string;
   status: 'todo' | 'in_progress' | 'in_review' | 'done'; dueAt: string | null; completedAt: string | null; archivedAt: string | null;
   approvedSubmittedAt: string | null; approvedDue: string | null; approvedAssigneeId: string | null; approvedAssigneeName: string | null;
-  pendingSubmittedAt: string | null; pendingDue: string | null; rejections: number; reopens: number;
+  pendingSubmittedAt: string | null; pendingDue: string | null; rejections: number; reopens: number; links: string;
 };
 export type Timing = 'on_time' | 'late' | 'undated' | 'overdue' | null;
 export interface Summary { completed: number; onTime: number; late: number; undated: number; openOverdue: number; overdueTotal: number; inReview: number; open: number }
@@ -19,7 +19,8 @@ const select = `SELECT t.id, t.title, t.committee_id AS committeeId, c.name AS c
     s.submitted_at AS approvedSubmittedAt, s.due_at_snapshot AS approvedDue, s.assignee_id_snapshot AS approvedAssigneeId, au.name AS approvedAssigneeName,
     p.submitted_at AS pendingSubmittedAt, p.due_at_snapshot AS pendingDue,
     (SELECT count(*) FROM task_submissions r WHERE r.task_id = t.id AND r.resolution = 'rejected') AS rejections,
-    (SELECT count(*) FROM task_reopens o WHERE o.task_id = t.id) AS reopens
+    (SELECT count(*) FROM task_reopens o WHERE o.task_id = t.id) AS reopens,
+    (SELECT json_group_array(json_object('url', url, 'label', label)) FROM (SELECT url, label FROM task_links WHERE task_id = t.id ORDER BY created_at)) AS links
   FROM tasks t JOIN committees c ON c.id = t.committee_id JOIN user u ON u.id = t.assignee_id
   LEFT JOIN task_submissions s ON s.id = t.approved_submission_id AND t.status = 'done'
   LEFT JOIN user au ON au.id = s.assignee_id_snapshot
@@ -62,6 +63,7 @@ const toItem = (row: Row, now: string) => ({
   personId: owner(row), personName: ownerName(row), status: row.status, dueAt: row.status === 'done' ? row.approvedDue : row.dueAt,
   submittedAt: row.status === 'done' ? row.approvedSubmittedAt : row.pendingSubmittedAt, completedAt: row.completedAt,
   timing: timing(row, now), rejections: row.rejections, reopens: row.reopens,
+  links: JSON.parse(row.links) as Array<{ url: string; label: string }>,
 });
 
 function group(rows: Row[], now: string, key: (row: Row) => string, name: (row: Row) => string) {
