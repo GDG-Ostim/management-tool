@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, UsersRound } from 'lucide-react';
 import { api, ApiError, errorMessage, type Committee, type CommitteeDetail, type Priority, type Task, type TaskStatus } from './api';
-import { Avatar, Badge, Button, Dialog, EmptyState, Toast, type ToastMessage } from './ui';
+import { Avatar, Badge, Button, Dialog, EmptyState, ScrollFade, Toast, type ToastMessage } from './ui';
 import type { Me } from './Dashboard';
 
 const columns: Array<{ status: TaskStatus; label: string; tone: string }> = [
@@ -290,7 +290,7 @@ export function Board({ me }: { me: Me }) {
         </select></label>
     </div>
     {loadError ? <div className="ui-card"><EmptyState icon={<RefreshCw size={22} />} title="Pano yüklenemedi" description={loadError} action={<Button onClick={() => void loadTasks()}>Yeniden dene</Button>} /></div>
-      : <div className="board" aria-busy={!tasks}>
+      : <ScrollFade className="board" label="Pano sütunları" aria-busy={!tasks}>
         {columns.map(column => {
           const items = visible.filter(task => task.status === column.status);
           return <section key={column.status} className={['board-column', accepts(column.status) && 'can-drop', over === column.status && accepts(column.status) && 'is-over'].filter(Boolean).join(' ')}
@@ -309,7 +309,7 @@ export function Board({ me }: { me: Me }) {
             </div>
           </section>;
         })}
-      </div>}
+      </ScrollFade>}
     <TaskDialog open={creating || !!editing} task={editing} me={me} committees={active} defaultCommittee={selected}
       close={() => { setCreating(false); setEditing(null); }}
       saved={(task, created) => {

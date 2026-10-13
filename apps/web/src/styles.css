@@ -116,13 +116,28 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .panel-subtitle { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 13px; }.panel-subtitle span { color: #8a9096; font-weight: 600; }.panel-empty { margin: 0; padding: 18px 0; color: #7a8087; font-size: 13px; }
 .member-list { display: grid; margin: 0; padding: 0; list-style: none; }.member-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f1f3; }.member-list li.is-inactive .user-cell { opacity: .6; }.member-controls { display: flex; align-items: center; gap: 4px; }.member-controls select { min-height: 36px; width: 160px; font-size: 13px; }
 .member-add { display: grid; grid-template-columns: minmax(0, 1fr) 160px auto; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eceef0; }.member-add select { min-height: 40px; font-size: 13px; }
-@media (max-width: 1180px) { .board { grid-template-columns: repeat(4, minmax(260px, 82vw)); overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }.board-column { scroll-snap-align: start; } }
+@media (max-width: 1180px) { .board { grid-template-columns: repeat(4, minmax(260px, 82vw)); scroll-snap-type: x mandatory; }.board-column { scroll-snap-align: start; } }
 @media (max-width: 900px) { .committee-layout { grid-template-columns: 1fr; }.committee-list { grid-auto-flow: column; grid-auto-columns: minmax(180px, 1fr); overflow-x: auto; } }
 @media (max-width: 760px) {
   .board-toolbar { align-items: stretch; flex-direction: column; }.board-toolbar .search-field, .board-select select { width: 100%; }
-  .board { margin-inline: -18px; padding-inline: 18px; scroll-padding-inline: 18px; }.form-grid { grid-template-columns: 1fr; }
+  .scroll-fade:has(> .board) { margin-inline: -18px; }.board { padding-inline: 18px; scroll-padding-inline: 18px; }.form-grid { grid-template-columns: 1fr; }
   .committee-panel-head { flex-direction: column; }.committee-actions { justify-content: flex-start; }.member-add { grid-template-columns: 1fr; }.member-list li { align-items: flex-start; flex-direction: column; }.member-controls { width: 100%; }.member-controls select { flex: 1; width: auto; }
 }
+.scroll-fade { --fade-bg: 246 247 248; position: relative; min-width: 0; }
+.scroll-fade-viewport { overflow-x: auto; }@supports not selector(::-webkit-scrollbar) { .scroll-fade-viewport { scrollbar-width: thin; scrollbar-color: #c4c9cf transparent; } }.scroll-fade-viewport::-webkit-scrollbar-button { display: none; }
+.scroll-fade-viewport::-webkit-scrollbar { height: 8px; }.scroll-fade-viewport::-webkit-scrollbar-track { margin-inline: 4px; border-radius: 99px; background: rgb(32 33 36 / 5%); }
+.scroll-fade-viewport::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 99px; background: #c4c9cf padding-box; }.scroll-fade-viewport::-webkit-scrollbar-thumb:hover { background-color: #9aa0a6; }
+.scroll-fade::before, .scroll-fade::after { position: absolute; z-index: 2; top: 0; bottom: 14px; width: 64px; content: ''; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.scroll-fade::before { left: 0; background: linear-gradient(to right, rgb(var(--fade-bg)) 8%, rgb(var(--fade-bg) / 0)); }
+.scroll-fade::after { right: 0; background: linear-gradient(to left, rgb(var(--fade-bg)) 8%, rgb(var(--fade-bg) / 0)); }
+.scroll-fade.has-start::before, .scroll-fade.has-end::after { opacity: 1; }
+.scroll-fade-button { position: absolute; z-index: 3; top: 44px; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #dfe2e6; border-radius: 99px; color: #3c4043; background: #fff; box-shadow: 0 4px 14px rgb(32 33 36 / 14%); cursor: pointer; opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s ease, transform .15s ease; }
+.scroll-fade-button:hover { color: #174ea6; transform: scale(1.06); }.scroll-fade-button:focus-visible { outline: 3px solid rgb(66 133 244 / 28%); }
+.scroll-fade-button.is-start { left: 8px; }.scroll-fade-button.is-end { right: 8px; }
+.scroll-fade.has-start .scroll-fade-button.is-start, .scroll-fade.has-end .scroll-fade-button.is-end { opacity: 1; visibility: visible; }
+@media (hover: none) { .scroll-fade-button { display: none; } }
+.board.scroll-fade-viewport { overflow-x: visible; }
+@media (max-width: 1180px) { .board.scroll-fade-viewport { overflow-x: auto; padding-bottom: 10px; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes mascot-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @media (max-height: 680px) and (min-width: 761px) { .sidebar-nav { margin-top: 18px; }.sidebar-help { min-height: 0; padding-right: 14px; }.sidebar-help img { display: none; } }
