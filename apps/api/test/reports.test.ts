@@ -111,4 +111,11 @@ describe('rapor hesapları ve kapsamı', () => {
     assert.deepEqual([report.body.memberCount, report.body.committeeCount], [3, 2]);
     assert.deepEqual(report.body.byCommittee.map((item: { name: string; summary: { open: number } }) => [item.name, item.summary.open]), [['Etkinlik', 2], ['Medya', 2]]);
   });
+
+  test('profil yalnız aktif komite başkanlığında rapor menüsünü açar', async () => {
+    const leads = async (cookie: string) => (await ws.request('/api/me', cookie)).body.leadsCommittee;
+    assert.deepEqual([await leads(ws.cookies.lead), await leads(ws.cookies.member), await leads(ws.cookies.admin)], [true, false, false]);
+    db().prepare('UPDATE committees SET archived_at = ? WHERE id = ?').run(new Date().toISOString(), media);
+    assert.equal(await leads(ws.cookies.outsider), false);
+  });
 });

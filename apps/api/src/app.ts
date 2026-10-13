@@ -72,7 +72,9 @@ export async function createApplication(config: Config, mailer: Mailer = createM
     const { id, name, email, role } = res.locals.user;
     const profile = db.prepare('SELECT onboarding_completed_at AS onboardingCompletedAt FROM user_profiles WHERE user_id = ?')
       .get(id) as { onboardingCompletedAt: string | null };
-    res.json({ id, name, email, role, onboardingCompletedAt: profile.onboardingCompletedAt });
+    const leads = db.prepare(`SELECT 1 FROM committee_memberships m JOIN committees c ON c.id = m.committee_id
+      WHERE m.user_id = ? AND m.role = 'lead' AND c.archived_at IS NULL`).get(id);
+    res.json({ id, name, email, role, onboardingCompletedAt: profile.onboardingCompletedAt, leadsCommittee: !!leads });
   });
   app.patch('/api/me/onboarding', requireMember, (req, res) => {
     const body = req.body as unknown;

@@ -7,7 +7,9 @@ ozet: "Tekil görev sayımı, teslim zamanı ve rol kapsamına göre temel rapor
 # Raporlar
 
 ## Uygulama durumu
-`apps/api/src/reports.ts` tek rapor servisidir. `/api/reports/me` herkese; `/api/reports/users/:id` kişinin kendisine, başkana ve yalnız başkanı olduğu ortak komiteler kapsamında komite başkanına açıktır (diğerleri 404). `/api/reports/committees/:id` komite başkanı ve başkana (üye 403), `/api/reports/overview` yalnız başkana açıktır. Yanıtlar `summary` (completed, onTime, late, undated, openOverdue, overdueTotal, inReview, open), kırılımlar ve görev satırlarını (`timing`, son teslim, ret/yeniden açma sayısı) döndürür. Çıktı bağlantıları #11 ile satırlara eklenecek; ekranlar #14 kapsamındadır. Testler bu nottaki örnekleri birebir doğrular.
+`apps/api/src/reports.ts` tek rapor servisidir. `/api/reports/me` herkese; `/api/reports/users/:id` kişinin kendisine, başkana ve yalnız başkanı olduğu ortak komiteler kapsamında komite başkanına açıktır (diğerleri 404). `/api/reports/committees/:id` komite başkanı ve başkana (üye 403), `/api/reports/overview` yalnız başkana açıktır. Yanıtlar `summary` (completed, onTime, late, undated, openOverdue, overdueTotal, inReview, open), kırılımlar ve görev satırlarını (`timing`, son teslim, ret/yeniden açma sayısı) döndürür. Çıktı bağlantıları #11 ile satırlara eklenecek. Testler bu nottaki örnekleri birebir doğrular.
+
+Ekranlar (`apps/web/src/Reports.tsx`, ortak parçalar `reporting.tsx`) yalnız bu yanıtları gösterir: Genel Bakış başkanda genel, diğerlerinde kişisel özeti; Profilim kişisel raporu; Raporlar başkanda genel → komite (`?komite=`) → kişi (`?kisi=`) zincirini, komite başkanında yalnız başkanı olduğu aktif komiteleri ve o komitelerin üyelerini açar. Menüdeki Raporlar bağlantısı `/api/me` içindeki `leadsCommittee` alanına göre görünür; asıl sınır API'dedir.
 
 İlk sürümde tarih/dönem filtreleri, puanlama ve liderlik tablosu yoktur. Raporlar mevcut veri üzerinden kümülatif görünür. Kişisel profil ad, komiteler ve kapsam dahilindeki görev/çıktı listesini gösterir; üyelerin birbirinin performans sayfasını görmesi gerekmez.
 
