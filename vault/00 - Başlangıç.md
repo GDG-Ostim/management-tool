@@ -9,7 +9,7 @@ ozet: "Tek topluluk için GDG Management Tool MVP kapsamı ve okuma rotası."
 GDG OSTİM'in ekip içi yönetim aracı. Tek kurulumda tek topluluk bulunur; topluluk içinde birden çok komite vardır. Kod public tutulur; başka kulüpler repoyu alıp kendilerine uyarlayabilir. Çok topluluklu platform veya özel bir self-host ürün akışı yapılmaz.
 
 ## Bugünkü durum
-Planlama tamamlandı; uygulama kodu henüz yok. Bu vault geliştirme rehberidir. Çalışan özellik durumu GitHub issue'larıyla takip edilir.
+Planlama tamamlandı. Kimlik altyapısı, ilk başkan bootstrap komutu, kapalı giriş ve davetle şifre belirleme akışı geliştirildi. Bu vault geliştirme rehberidir; çalışan özellik durumu GitHub issue'larıyla takip edilir.
 
 ## MVP
 Başkan komite ve kullanıcı oluşturur, rolleri atar. Kullanıcı e-posta üzerinden şifre belirleyip giriş yapar. Her komitenin Kanban panosu vardır. Üye komitesinin görevlerini görür; yalnız kendi görevini ilerletir ve kendisine görev açabilir. Tamamlama başkan/komite başkanı onayından geçer. Kişi, komite ve genel raporlar temel iş sayılarını gösterir.
@@ -21,7 +21,7 @@ Başkan komite ve kullanıcı oluşturur, rolleri atar. Kullanıcı e-posta üze
 - [[Ürün/Roller ve Yetkiler]], [[Ürün/Görev Akışı]], [[Ürün/Raporlar]].
 - [[Mimari/Sistem]], [[Mimari/Veri Modeli]], [[Mimari/Kimlik ve Kurulum]].
 - [[Tasarım/Arayüz]], [[Tasarım/Ekranlar]], [[Tasarım/Maskot ve Varlıklar]].
-- [[Operasyon/GitHub İşleri]], [[Sistem/AI Çalışma Düzeni]].
+- [[Operasyon/GitHub İşleri]], [[Operasyon/CI CD]], [[Sistem/AI Çalışma Düzeni]].
 
 ## İş takibi
 [Public Project](https://github.com/orgs/GDG-Ostim/projects/1) · [Issues](https://github.com/GDG-Ostim/management-tool/issues)

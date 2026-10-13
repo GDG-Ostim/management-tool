@@ -40,6 +40,11 @@
     "ozet": "Minimal SQLite tabloları ve geçmişi koruyan ilişkiler."
   },
   {
+    "path": "vault/Operasyon/CI CD.md",
+    "alan": "ops",
+    "ozet": "PR doğrulama, ana dal çıktısı ve Docker sonrası güvenli dağıtım planı."
+  },
+  {
     "path": "vault/Operasyon/GitHub İşleri.md",
     "alan": "ops",
     "ozet": "Public Project, kısa issue listesi ve 10/10 sorumluluk dağılımı."

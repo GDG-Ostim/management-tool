@@ -23,6 +23,7 @@ ozet: "Ürün, mimari, tasarım ve operasyon notlarının kanonik dizini."
 | Görsel üretimi | [[Tasarım/Maskot ve Varlıklar]] |
 | Issue dağılımı | [[Operasyon/GitHub İşleri]] |
 | Docker ve bakım | [[Operasyon/Çalıştırma ve Teslim]] |
+| CI/CD | [[Operasyon/CI CD]] |
 | Kısa AI bağlamı | [[Sistem/AI Başlangıç]] |
 | Hook ve not bakımı | [[Sistem/AI Çalışma Düzeni]] |
 | Doküman kaynakları | [[Sistem/Teknik Kaynaklar]] |
