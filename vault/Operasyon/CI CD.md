@@ -15,6 +15,8 @@ Her pull request ve `main` push'unda tek, tekrar üretilebilir doğrulama hattı
 4. TypeScript kontrolü ile API ve web production build'i.
 5. Production bağımlılıklarında yüksek/kritik npm güvenlik denetimi.
 
+Workflow action'ları Node.js 24 runtime kullanan güncel major sürümlerdedir. Uygulamanın test/build matrisi ise `package.json` ile uyumlu Node.js 22 üzerinde çalışır.
+
 Yeni commit aynı branch'teki eski çalışmayı iptal eder. Süre sınırı takılan job'ların runner tüketmesini önler. `main` doğrulaması oluşan API/web derlemelerini 14 günlük GitHub artifact'i olarak saklar. Haftalık npm ve aylık GitHub Actions Dependabot PR'ları açılır.
 
 `Vault` workflow'u yalnız doküman, bağlam scripti veya ortak çalışma kuralı değiştiğinde hızlı geri bildirim verir. Ana CI Vault'u ayrıca kontrol ettiği için merge güvenliği tek bir zorunlu `CI / Validate` durumuna bağlanabilir.
