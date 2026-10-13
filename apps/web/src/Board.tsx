@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import { CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, UsersRound } from 'lucide-react';
+import { CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, Undo2, UsersRound } from 'lucide-react';
 import { api, ApiError, errorMessage, type Committee, type CommitteeDetail, type Priority, type Task, type TaskStatus } from './api';
 import { Avatar, Badge, Button, Dialog, EmptyState, ScrollFade, Toast, type ToastMessage } from './ui';
 import type { Me } from './Dashboard';
+import { ReviewTimeline } from './ReviewTimeline';
 
 const columns: Array<{ status: TaskStatus; label: string; tone: string }> = [
   { status: 'todo', label: 'Yapılacak', tone: 'gray' },
@@ -78,6 +79,7 @@ function TaskCard({ task, me, showCommittee, open, move, dragStart, dragEnd }: {
       <span className="task-card-tools">{draggable && <GripVertical className="drag-handle" size={15} aria-hidden="true" />}<CardMenu task={task} me={me} move={move} /></span>
     </header>
     <h3 tabIndex={0} role="button" aria-label={`${task.title} görevini aç`} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }}>{task.title}</h3>
+    {task.returned && <span className="task-returned"><Undo2 size={13} />{task.returned === 'rejected' ? 'Düzeltme istendi' : 'Yeniden açıldı'}</span>}
     <footer>
       <span className="task-assignee"><Avatar name={task.assigneeName} size="small" /><span>{task.assigneeId === me.id ? 'Sen' : task.assigneeName}</span></span>
       <span className="task-meta">
@@ -171,6 +173,7 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
         <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task?.dueAt ?? null)} disabled={!editable || (!!task && !manage)} /></label>
       </div>
       {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
+      {task && <ReviewTimeline taskId={task.id} version={task.version} />}
       {error && <p className="form-error" role="alert">{error}</p>}
       <footer><Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
         {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : 'Görevi oluştur'}</Button>}</footer>

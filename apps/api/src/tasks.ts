@@ -12,12 +12,23 @@ type TaskRow = {
   id: string; committeeId: string; committeeName: string; title: string; description: string;
   assigneeId: string; assigneeName: string; createdBy: string; status: TaskStatus; priority: string;
   dueAt: string | null; version: number; createdAt: string; updatedAt: string; completedAt: string | null;
+  lastResolution: string | null; lastResolvedAt: string | null; lastReopenAt: string | null;
 };
 
 const select = `SELECT t.id, t.committee_id AS committeeId, c.name AS committeeName, t.title, t.description,
     t.assignee_id AS assigneeId, u.name AS assigneeName, t.created_by AS createdBy, t.status, t.priority,
-    t.due_at AS dueAt, t.version, t.created_at AS createdAt, t.updated_at AS updatedAt, t.completed_at AS completedAt
-  FROM tasks t JOIN committees c ON c.id = t.committee_id JOIN user u ON u.id = t.assignee_id`;
+    t.due_at AS dueAt, t.version, t.created_at AS createdAt, t.updated_at AS updatedAt, t.completed_at AS completedAt,
+    ls.resolution AS lastResolution, ls.resolved_at AS lastResolvedAt,
+    (SELECT max(o.created_at) FROM task_reopens o WHERE o.task_id = t.id) AS lastReopenAt
+  FROM tasks t JOIN committees c ON c.id = t.committee_id JOIN user u ON u.id = t.assignee_id
+  LEFT JOIN task_submissions ls ON ls.id = (SELECT s.id FROM task_submissions s WHERE s.task_id = t.id ORDER BY s.submitted_at DESC, s.rowid DESC LIMIT 1)`;
+
+/** Why an open task came back to its assignee, if the latest review event sent it back. */
+function returned(row: TaskRow): 'rejected' | 'reopened' | null {
+  if (row.status !== 'todo' && row.status !== 'in_progress') return null;
+  if (row.lastReopenAt && (!row.lastResolvedAt || row.lastReopenAt >= row.lastResolvedAt)) return 'reopened';
+  return row.lastResolution === 'rejected' ? 'rejected' : null;
+}
 
 /** Moves the actor may request from the task's current column; reasons are enforced on transition. */
 export function allowedMoves(task: Pick<TaskRow, 'status' | 'assigneeId'>, actor: Actor, manage: boolean): TaskStatus[] {
@@ -53,8 +64,9 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
   const { requireMember } = guards;
   const view = (row: TaskRow, actor: Actor, manage = isAdmin(actor) || committeeAccess(db, actor, row.committeeId).manage) => {
     const locked = row.status === 'in_review' || row.status === 'done';
+    const { lastResolution: _resolution, lastResolvedAt: _resolvedAt, lastReopenAt: _reopenAt, ...task } = row;
     return {
-      ...row,
+      ...task, returned: returned(row),
       permissions: { edit: !locked && (manage || row.assigneeId === actor.id), manage, moves: allowedMoves(row, actor, manage) },
     };
   };
@@ -181,5 +193,20 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
       return load(actor, row.id).row;
     })();
     res.json(view(updated, actor));
+  });
+
+  /** Short review history for the task window; anyone who can read the committee can read it. */
+  app.get('/api/tasks/:id/reviews', requireMember, (req, res) => {
+    const { row } = load(res.locals.user as Actor, String(req.params.id));
+    const submissions = db.prepare(`SELECT s.id, s.submitted_at AS submittedAt, su.name AS submittedBy, au.name AS assigneeName,
+        s.due_at_snapshot AS dueAt, s.resolution, s.resolved_at AS resolvedAt, ru.name AS resolvedBy, s.reason
+      FROM task_submissions s JOIN user su ON su.id = s.submitted_by JOIN user au ON au.id = s.assignee_id_snapshot
+      LEFT JOIN user ru ON ru.id = s.resolved_by WHERE s.task_id = ? ORDER BY s.submitted_at DESC, s.rowid DESC`).all(row.id) as Array<{ submittedAt: string; dueAt: string | null }>;
+    const reopens = db.prepare(`SELECT o.id, o.created_at AS createdAt, u.name AS actorName, o.reason
+      FROM task_reopens o JOIN user u ON u.id = o.actor_id WHERE o.task_id = ? ORDER BY o.created_at DESC, o.rowid DESC`).all(row.id);
+    res.json({
+      submissions: submissions.map(item => ({ ...item, onTime: item.dueAt ? item.submittedAt <= item.dueAt : null })),
+      reopens,
+    });
   });
 }
