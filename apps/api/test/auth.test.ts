@@ -6,6 +6,7 @@ import { join, resolve, sep } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import { createApplication } from '../src/app.js';
 import { bootstrap } from '../src/identity.js';
+import { canSignIn } from '../src/database.js';
 import type { Config } from '../src/config.js';
 import type { PasswordMail } from '../src/mail.js';
 
@@ -25,6 +26,7 @@ describe('kapalı kayıt ve davet akışı', () => {
   let server: Server;
   let passwordFile: string;
   let adminCookie = '';
+  let memberCookie = '';
   let failMail = false;
   const messages: PasswordMail[] = [];
   const admin = { email: 'baskan@example.com', password: 'Guclu-Baslangic-Sifresi-123!' };
@@ -97,6 +99,7 @@ describe('kapalı kayıt ve davet akışı', () => {
     assert.equal(repeated.status, 400);
     const member = await login('uye@example.com', 'Yeni-Uye-Sifresi-123!');
     assert.equal(member.response.status, 200); assert.ok(member.cookie);
+    memberCookie = member.cookie;
     const signedIn = await member.response.json() as { user: { id: string } };
     assert.equal((application.db.prepare('SELECT state FROM invitations WHERE user_id = ?').get(signedIn.user.id) as { state: string }).state, 'accepted');
   });
@@ -112,6 +115,48 @@ describe('kapalı kayıt ve davet akışı', () => {
     failMail = false;
     const retry = await request(`/api/users/${failedUser.id}/invite`, { method: 'POST', headers: { cookie: adminCookie } });
     assert.equal(retry.status, 200); assert.equal((await retry.json()).invitation, 'sent');
+  });
+
+  test('başkan kullanıcı rolünü ve erişimini yönetir; son başkan korunur', async () => {
+    const patch = (id: string, body: unknown, cookie = adminCookie) => request(`/api/users/${id}`, { method: 'PATCH', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const forbidden = await request('/api/users', { headers: { cookie: memberCookie } });
+    assert.equal(forbidden.status, 403);
+    const list = await request('/api/users', { headers: { cookie: adminCookie } });
+    assert.equal(list.status, 200);
+    const users = await list.json() as Array<{ id: string; email: string; role: string; active: boolean; invitation: string; createdAt: string }>;
+    const chief = users.find(user => user.email === admin.email)!;
+    const member = users.find(user => user.email === 'uye@example.com')!;
+    assert.deepEqual([member.role, member.active, member.invitation], ['user', true, 'accepted']);
+    assert.ok(Date.parse(member.createdAt));
+
+    assert.equal((await patch(member.id, { role: 'super_admin' }, memberCookie)).status, 403);
+    assert.equal((await patch(member.id, { role: 'owner' })).status, 400);
+    assert.equal((await patch(member.id, { active: 'no' })).status, 400);
+    assert.equal((await patch(member.id, { name: 'Yeni Ad' })).status, 400);
+    assert.equal((await patch('missing', { active: false })).status, 404);
+    const self = await patch(chief.id, { active: false });
+    assert.equal(self.status, 409); assert.equal((await self.json()).error.code, 'SELF_UPDATE');
+
+    const promoted = await patch(member.id, { role: 'super_admin' });
+    assert.equal(promoted.status, 200); assert.equal((await promoted.json()).role, 'super_admin');
+    assert.equal((await request('/api/users', { headers: { cookie: memberCookie } })).status, 200);
+    assert.equal((await patch(chief.id, { role: 'user' }, memberCookie)).status, 200);
+    assert.equal((await request('/api/users', { headers: { cookie: adminCookie } })).status, 403);
+    // The only remaining chief cannot remove their own access.
+    assert.equal((await patch(member.id, { role: 'user' }, memberCookie)).status, 409);
+    assert.equal((await patch(chief.id, { role: 'super_admin' }, memberCookie)).status, 200);
+    assert.equal((await patch(member.id, { role: 'user' })).status, 200);
+
+    const deactivated = await patch(member.id, { active: false });
+    assert.equal(deactivated.status, 200); assert.equal((await deactivated.json()).active, false);
+    assert.equal((application.db.prepare('SELECT count(*) AS count FROM session WHERE userId = ?').get(member.id) as { count: number }).count, 0);
+    assert.equal((await request('/api/me', { headers: { cookie: memberCookie } })).status, 401);
+    assert.equal((await login('uye@example.com', 'Yeni-Uye-Sifresi-123!')).response.status, 403);
+    assert.equal((await request(`/api/users/${member.id}/invite`, { method: 'POST', headers: { cookie: adminCookie } })).status, 409);
+    const reactivated = await patch(member.id, { active: true });
+    assert.equal((await reactivated.json()).active, true);
+    // Sign-in is rate limited per IP; access is checked directly instead of a fourth login.
+    assert.ok(canSignIn(application.db, member.id));
   });
 
   test('CSRF origin kontrolü ve genel şifre yanıtı veri sızdırmaz', async () => {

@@ -1,11 +1,12 @@
-import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 
 function classes(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'default' | 'icon';
 };
 
@@ -32,4 +33,29 @@ export function EmptyState({ icon, title, description, action }: { icon: ReactNo
     <p>{description}</p>
     {action}
   </div>;
+}
+
+export function Badge({ tone = 'gray', children }: { tone?: 'gray' | 'blue' | 'green' | 'yellow' | 'red'; children: ReactNode }) {
+  return <span className={`ui-badge tone-${tone}`}>{children}</span>;
+}
+
+export function Field({ label, hint, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+  return <label className="ui-field"><span>{label}</span><input className="ui-input" {...props} />{hint && <small>{hint}</small>}</label>;
+}
+
+export function Dialog({ open, title, description, onClose, busy = false, children }: { open: boolean; title: string; description?: string; onClose(): void; busy?: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) { dialog.showModal(); dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus(); }
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+  return <dialog ref={ref} className="ui-dialog" aria-labelledby="ui-dialog-title" onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}>
+    {open && <>
+      <header><div><h2 id="ui-dialog-title">{title}</h2>{description && <p>{description}</p>}</div>
+        <Button size="icon" variant="ghost" aria-label="Kapat" onClick={onClose} disabled={busy}><X size={19} /></Button></header>
+      {children}
+    </>}
+  </dialog>;
 }

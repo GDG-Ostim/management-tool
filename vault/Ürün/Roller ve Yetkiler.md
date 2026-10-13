@@ -25,6 +25,7 @@ Komite üyeliği `committee_memberships.role = lead | member`; global normal kul
 | Komite/genel rapor | Tümü | Başkan olduğu komite | Yok |
 
 ## Sınır durumları
+- Başkan kendi rolünü veya aktifliğini değiştiremez; bunu başka bir başkan yapar. Böylece son aktif başkan kendini kilitleyemez; sunucu ayrıca son aktif başkanı transaction içinde korur.
 - İstemcide düğme gizlemek yeterli değildir. Her okuma/yazma ve ilişkili alt kaynak (yorum/checklist/çıktı) sunucuda kontrol edilir.
 - Komite başkanı bir üyenin profilinden başka komitelerdeki işlerine erişemez. Ortak kullanıcı ID'si bu sınırı kaldırmaz.
 - Rol, üyelik veya aktiflik değiştiğinde sonraki istekte veritabanından güncel yetki alınır. Pasifleştirme oturumları iptal eder.
