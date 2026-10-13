@@ -1,0 +1,162 @@
+[
+  {
+    "key": "MVP-01",
+    "phase": 1,
+    "title": "[Faz 1] Proje iskeletini ve geliştirme komutlarını kur",
+    "assignee": "TurkerAlbayrak",
+    "note": "Mimari/Sistem.md",
+    "summary": "React/Vite ve Express TypeScript çalışma alanlarını kur. Ortak tipleri, geliştirme komutlarını ve temel hata yanıtını bağla."
+  },
+  {
+    "key": "MVP-02",
+    "phase": 1,
+    "title": "[Faz 1] SQLite veri modelini ve migration altyapısını kur",
+    "assignee": "TurkerAlbayrak",
+    "note": "Mimari/Veri Modeli.md",
+    "summary": "Komite, üyelik, görev ve inceleme tablolarını kur. Better Auth tablolarıyla bağlantıları, kısıtları ve migration sırasını hazırla."
+  },
+  {
+    "key": "MVP-03",
+    "phase": 1,
+    "title": "[Faz 1] Better Auth giriş ve şifre ekranlarını kur",
+    "assignee": "poyrazavsever",
+    "note": "Mimari/Kimlik ve Kurulum.md",
+    "summary": "Kapalı kayıtlı e-posta/şifre girişini, oturumları, şifremi unuttum ve şifre belirleme ekranlarını bağla."
+  },
+  {
+    "key": "MVP-04",
+    "phase": 1,
+    "title": "[Faz 1] İlk başkan ve Resend davet akışını kur",
+    "assignee": "poyrazavsever",
+    "note": "Mimari/Kimlik ve Kurulum.md",
+    "summary": "Tek seferlik güvenli başkan bootstrap'ini, yönetici kullanıcı oluşturmasını ve Resend şifre belirleme/yeniden davet akışını yap."
+  },
+  {
+    "key": "MVP-05",
+    "phase": 1,
+    "title": "[Faz 1] Komite bazlı yetki kontrollerini kur",
+    "assignee": "TurkerAlbayrak",
+    "note": "Ürün/Roller ve Yetkiler.md",
+    "summary": "Başkan, komite başkanı ve üye kontrollerini sunucuya ekle. Çoklu komite rolleri, pasif hesap ve son başkan korumasını uygula."
+  },
+  {
+    "key": "MVP-06",
+    "phase": 2,
+    "title": "[Faz 2] Minimal dashboard iskeletini oluştur",
+    "assignee": "poyrazavsever",
+    "note": "Tasarım/Arayüz.md",
+    "summary": "Sidebar, sayfa düzeni, Türkçe bileşenler ve responsive shadcn/ui temelini referanslara göre kur. Google renklerini ölçülü kullan."
+  },
+  {
+    "key": "MVP-07",
+    "phase": 2,
+    "title": "[Faz 2] Komite ve üyelik yönetimini geliştir",
+    "assignee": "TurkerAlbayrak",
+    "note": "Ürün/Roller ve Yetkiler.md",
+    "summary": "Komite API ve ekranını, komite başkanı/üye atamalarını ve arşiv akışını tamamla."
+  },
+  {
+    "key": "MVP-08",
+    "phase": 2,
+    "title": "[Faz 2] Kullanıcı yönetimi ekranını geliştir",
+    "assignee": "poyrazavsever",
+    "note": "Tasarım/Ekranlar.md",
+    "summary": "Başkanın kullanıcı eklemesi, rol/üyelik düzenlemesi, daveti yeniden göndermesi ve hesabı pasifleştirmesi için ekranı bağla."
+  },
+  {
+    "key": "MVP-09",
+    "phase": 3,
+    "title": "[Faz 3] Görev API ve alanlarını geliştir",
+    "assignee": "TurkerAlbayrak",
+    "note": "Ürün/Görev Akışı.md",
+    "summary": "Görev oluşturma/düzenleme/atama, filtreleme ve arşivi yap. Üyenin yalnız kendine görev açması ve kendi işini düzenlemesini uygula."
+  },
+  {
+    "key": "MVP-10",
+    "phase": 3,
+    "title": "[Faz 3] Sürükle bırak Kanban panolarını geliştir",
+    "assignee": "poyrazavsever",
+    "note": "Ürün/Görev Akışı.md",
+    "summary": "Dört sütun, komite seçimi, başkanın ortak board'u ve filtreleri yap. Yetkili sürükle bırak ile klavye/mobil durum menüsünü bağla."
+  },
+  {
+    "key": "MVP-11",
+    "phase": 3,
+    "title": "[Faz 3] Görev detayını yorumlar ve çıktılarla tamamla",
+    "assignee": "TurkerAlbayrak",
+    "note": "Tasarım/Ekranlar.md",
+    "summary": "Görev detay panelinde açıklama, checklist, etiket, çıktı bağlantıları ve yorumları API ile birlikte tamamla."
+  },
+  {
+    "key": "MVP-12",
+    "phase": 3,
+    "title": "[Faz 3] İnceleme onayı ve yeniden açma akışını geliştir",
+    "assignee": "TurkerAlbayrak",
+    "note": "Ürün/Görev Akışı.md",
+    "summary": "Teslim, ret, onay ve yeniden açma geçişlerini; kısa geçmişi, snapshot'ları ve eşzamanlı işlem kontrolünü bağla."
+  },
+  {
+    "key": "MVP-13",
+    "phase": 4,
+    "title": "[Faz 4] Kişi komite ve genel rapor API'lerini geliştir",
+    "assignee": "poyrazavsever",
+    "note": "Ürün/Raporlar.md",
+    "summary": "Tamamlanan, zamanında ve geciken iş hesaplarını tek rapor servisinde kur. Yetki kapsamı, yeniden açma ve tekil görev sayımını uygula."
+  },
+  {
+    "key": "MVP-14",
+    "phase": 4,
+    "title": "[Faz 4] Profil raporlar ve genel bakış ekranlarını geliştir",
+    "assignee": "TurkerAlbayrak",
+    "note": "Ürün/Raporlar.md",
+    "summary": "Profil/çıktı listesi, genel bakış ve rol kapsamlı kişi/komite/genel rapor ekranlarını bağla."
+  },
+  {
+    "key": "MVP-15",
+    "phase": 4,
+    "title": "[Faz 4] Higgsfield ile maskot görsel paketini hazırla",
+    "assignee": "poyrazavsever",
+    "note": "Tasarım/Maskot ve Varlıklar.md",
+    "summary": "Ön/yan/arka referansı koruyarak karşılama, sakin, kutlama ve boş durum pozlarını üret. Şeffaf final dosyaları ve kısa üretim kayıtlarını vault'a ekle."
+  },
+  {
+    "key": "MVP-16",
+    "phase": 4,
+    "title": "[Faz 4] Maskotlu tanıtım ve yardım alanını ekle",
+    "assignee": "poyrazavsever",
+    "note": "Tasarım/Ekranlar.md",
+    "summary": "Hazırlanan maskotları atlanabilir ilk giriş tanıtımı ve küçük sidebar yardım alanına bağla. Yeniden açma ve reduced-motion davranışını tamamla."
+  },
+  {
+    "key": "MVP-17",
+    "phase": 5,
+    "title": "[Faz 5] Yetki ve iş kuralları entegrasyon testlerini tamamla",
+    "assignee": "TurkerAlbayrak",
+    "note": "Operasyon/Çalıştırma ve Teslim.md",
+    "summary": "Komiteler arası erişim, rol değişimi, kapalı kayıt, token süresi, ret/yeniden açma ve rapor hesabının kritik sunucu testlerini tamamla."
+  },
+  {
+    "key": "MVP-18",
+    "phase": 5,
+    "title": "[Faz 5] Uçtan uca akışları ve mobil kullanımı doğrula",
+    "assignee": "poyrazavsever",
+    "note": "Operasyon/Çalıştırma ve Teslim.md",
+    "summary": "Başkan davetinden üye teslimi ve rapora kadar akışı test et. Klavye, mobil, hata/boş durum ve maskot yerleşimi sorunlarını düzelt."
+  },
+  {
+    "key": "MVP-19",
+    "phase": 5,
+    "title": "[Faz 5] Docker Compose ve veri yedeklemeyi tamamla",
+    "assignee": "TurkerAlbayrak",
+    "note": "Operasyon/Çalıştırma ve Teslim.md",
+    "summary": "Production build, kalıcı SQLite volume, migration/bootstrap sırası, healthcheck, örnek config ve backup/restore komutlarını hazırla."
+  },
+  {
+    "key": "MVP-20",
+    "phase": 5,
+    "title": "[Faz 5] MVP entegrasyonunu ve son teslimi tamamla",
+    "assignee": "poyrazavsever",
+    "note": "01 - MVP Kapsamı.md",
+    "summary": "Tüm ekran/API akışlarını birlikte doğrula, kalan entegrasyon hatalarını kapat. Kurulum README'sini ve vault'u gerçek uygulamaya göre güncelle."
+  }
+]

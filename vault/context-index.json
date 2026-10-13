@@ -1,0 +1,102 @@
+[
+  {
+    "path": "vault/00 - Başlangıç.md",
+    "alan": "baslangic",
+    "ozet": "Tek topluluk için GDG Management Tool MVP kapsamı ve okuma rotası."
+  },
+  {
+    "path": "vault/01 - MVP Kapsamı.md",
+    "alan": "urun",
+    "ozet": "İlk sürümün tamamlanma sınırı ve kapsam dışı özellikleri."
+  },
+  {
+    "path": "vault/02 - Faz Planı.md",
+    "alan": "plan",
+    "ozet": "Beş fazda 20 kısa iş ile tamamlanacak MVP geliştirme sırası."
+  },
+  {
+    "path": "vault/Harita.md",
+    "alan": "baslangic",
+    "ozet": "Ürün, mimari, tasarım ve operasyon notlarının kanonik dizini."
+  },
+  {
+    "path": "vault/Kararlar/ADR-001 MVP Kararları.md",
+    "alan": "kararlar",
+    "ozet": "Kullanıcı tarafından netleştirilen kapsam ve uygulama tercihleri."
+  },
+  {
+    "path": "vault/Mimari/Kimlik ve Kurulum.md",
+    "alan": "auth",
+    "ozet": "İlk başkan, kapalı kayıt, kullanıcı daveti ve Resend şifre akışı."
+  },
+  {
+    "path": "vault/Mimari/Sistem.md",
+    "alan": "architecture",
+    "ozet": "React ve Express tek servis mimarisi, API alanları ve geliştirme sınırları."
+  },
+  {
+    "path": "vault/Mimari/Veri Modeli.md",
+    "alan": "architecture",
+    "ozet": "Minimal SQLite tabloları ve geçmişi koruyan ilişkiler."
+  },
+  {
+    "path": "vault/Operasyon/GitHub İşleri.md",
+    "alan": "ops",
+    "ozet": "Public Project, kısa issue listesi ve 10/10 sorumluluk dağılımı."
+  },
+  {
+    "path": "vault/Operasyon/Çalıştırma ve Teslim.md",
+    "alan": "ops",
+    "ozet": "Docker, veri sürekliliği ve MVP kapanış akışı."
+  },
+  {
+    "path": "vault/Oturumlar/2026-10-13 Planlama.md",
+    "alan": "ops",
+    "ozet": "MVP planlama oturumunun kapsamı ve kurulum kayıtları."
+  },
+  {
+    "path": "vault/Sistem/AI Başlangıç.md",
+    "alan": "baslangic",
+    "ozet": "Yeni oturum için kısa bağlam ve mevcut geliştirme durumu."
+  },
+  {
+    "path": "vault/Sistem/AI Çalışma Düzeni.md",
+    "alan": "ops",
+    "ozet": "Kısa bağlam yönlendirme, staged pre-commit hook ve vault doğrulaması."
+  },
+  {
+    "path": "vault/Sistem/Teknik Kaynaklar.md",
+    "alan": "architecture",
+    "ozet": "2026-10-13 tarihinde doğrulanan birincil teknik dokümanlar."
+  },
+  {
+    "path": "vault/Tasarım/Arayüz.md",
+    "alan": "ui",
+    "ozet": "Referanslara dayalı minimal dashboard dili ve Google renk vurguları."
+  },
+  {
+    "path": "vault/Tasarım/Ekranlar.md",
+    "alan": "ui",
+    "ozet": "MVP ekran listesi ve her ekranın işlevi."
+  },
+  {
+    "path": "vault/Tasarım/Maskot ve Varlıklar.md",
+    "alan": "assets",
+    "ozet": "Maskot referansları ve yalnız Poyraz'a ait Higgsfield üretim işi."
+  },
+  {
+    "path": "vault/Ürün/Görev Akışı.md",
+    "alan": "tasks",
+    "ozet": "Kanban geçişleri, görev alanları, inceleme ve yeniden açma davranışı."
+  },
+  {
+    "path": "vault/Ürün/Raporlar.md",
+    "alan": "reports",
+    "ozet": "Tekil görev sayımı, teslim zamanı ve rol kapsamına göre temel raporlar."
+  },
+  {
+    "path": "vault/Ürün/Roller ve Yetkiler.md",
+    "alan": "permissions",
+    "ozet": "Başkan, komite başkanı ve üyenin sunucu taraflı yetki sınırları."
+  }
+]

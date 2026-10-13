@@ -1,0 +1,13 @@
+{
+  "name": "gdg-management-tool",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "context": "node scripts/context.mjs",
+    "vault:index": "node scripts/vault.mjs index",
+    "vault:check": "node scripts/vault.mjs check",
+    "hooks:install": "node scripts/setup-hooks.mjs",
+    "test:tooling": "node --test scripts/vault.test.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
