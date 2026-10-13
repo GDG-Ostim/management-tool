@@ -28,3 +28,4 @@ ozet: "Ürün, mimari, tasarım ve operasyon notlarının kanonik dizini."
 | Hook ve not bakımı | [[Sistem/AI Çalışma Düzeni]] |
 | Doküman kaynakları | [[Sistem/Teknik Kaynaklar]] |
 | Oturum kaydı | [[Oturumlar/2026-10-13 Planlama]] |
+| Dashboard uygulama kaydı | [[Oturumlar/2026-10-13 Dashboard]] |

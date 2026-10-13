@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { authClient } from './auth-client';
+import { Dashboard, type Me } from './Dashboard';
 
 type Notice = { kind: 'success' | 'error'; text: string } | null;
 
@@ -88,9 +89,22 @@ function ResetPassword() {
 
 function Home() {
   const { data, isPending } = authClient.useSession();
-  useEffect(() => { if (!isPending && !data) window.location.replace('/giris'); }, [data, isPending]);
-  if (isPending || !data) return <main className="loading">Çalışma alanı yükleniyor…</main>;
-  return <main className="loading"><strong>Merhaba, {data.user.name}</strong><span>Dashboard sonraki issue’da hazırlanacak.</span><button onClick={async () => { await authClient.signOut(); location.assign('/giris'); }}>Çıkış yap</button></main>;
+  const [me, setMe] = useState<Me | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!isPending && !data) { window.location.replace('/giris'); return; }
+    if (!data) return;
+    const controller = new AbortController();
+    fetch('/api/me', { signal: controller.signal }).then(async response => {
+      if (response.status === 401) { await authClient.signOut(); location.replace('/giris'); return; }
+      if (!response.ok) throw new Error('profile');
+      setMe(await response.json() as Me);
+    }).catch(error => { if (error.name !== 'AbortError') setFailed(true); });
+    return () => controller.abort();
+  }, [data, isPending]);
+  if (failed) return <main className="loading"><strong>Çalışma alanı açılamadı</strong><span>Bağlantını kontrol edip sayfayı yenile.</span><button onClick={() => location.reload()}>Yeniden dene</button></main>;
+  if (isPending || !data || !me) return <main className="loading"><span className="loading-spinner" aria-hidden="true" />Çalışma alanı yükleniyor…</main>;
+  return <Dashboard me={me} />;
 }
 
 export function App() {

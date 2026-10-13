@@ -55,6 +55,11 @@
     "ozet": "Docker, veri sürekliliği ve MVP kapanış akışı."
   },
   {
+    "path": "vault/Oturumlar/2026-10-13 Dashboard.md",
+    "alan": "ui",
+    "ozet": "Poyraz #6 dashboard iskeletinin uygulama ve doğrulama kaydı."
+  },
+  {
     "path": "vault/Oturumlar/2026-10-13 Planlama.md",
     "alan": "ops",
     "ozet": "MVP planlama oturumunun kapsamı ve kurulum kayıtları."
