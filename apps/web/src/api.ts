@@ -27,3 +27,24 @@ export type Task = {
   dueAt: string | null; version: number; createdAt: string; updatedAt: string; completedAt: string | null;
   permissions: { edit: boolean; manage: boolean; moves: TaskStatus[] };
 };
+
+export type Summary = { completed: number; onTime: number; late: number; undated: number; openOverdue: number; overdueTotal: number; inReview: number; open: number };
+export type Timing = 'on_time' | 'late' | 'undated' | 'overdue' | null;
+export type ReportTask = {
+  id: string; title: string; committeeId: string; committeeName: string; personId: string; personName: string;
+  status: TaskStatus; dueAt: string | null; submittedAt: string | null; completedAt: string | null; timing: Timing; rejections: number; reopens: number;
+};
+export type Breakdown = { id: string; name: string; summary: Summary };
+export type PersonReport = {
+  generatedAt: string; person: { id: string; name: string; active: boolean };
+  committees: Array<{ id: string; name: string; role: CommitteeRole; archivedAt: string | null }>;
+  summary: Summary; byCommittee: Breakdown[]; tasks: ReportTask[];
+};
+export type CommitteeReport = {
+  generatedAt: string; committee: { id: string; name: string; archivedAt: string | null }; memberCount: number;
+  summary: Summary; byPerson: Array<Breakdown & { role: CommitteeRole | null; active: boolean }>; tasks: ReportTask[];
+};
+export type OverviewReport = {
+  generatedAt: string; memberCount: number; committeeCount: number; summary: Summary;
+  byCommittee: Array<Breakdown & { archivedAt: string | null }>; byPerson: Breakdown[];
+};

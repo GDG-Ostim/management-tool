@@ -1,31 +1,36 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import {
-  ArrowLeft, ArrowRight, BarChart3, CheckCircle2, ChevronDown, CircleUserRound, Clock3, FolderKanban,
-  LayoutDashboard, ListTodo, LockKeyhole, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
+  ArrowLeft, ArrowRight, BarChart3, ChevronDown, CircleUserRound, FolderKanban,
+  LayoutDashboard, LockKeyhole, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
 } from 'lucide-react';
 import { authClient } from './auth-client';
 import { Avatar, Button, Card, EmptyState } from './ui';
+import { Overview, Profile, Reports } from './Reports';
 import { Users } from './Users';
 import { Board } from './Board';
 import { Committees } from './Committees';
 
-type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null };
+type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null; leadsCommittee: boolean };
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
-type NavItem = { href: string; label: string; icon: Icon; admin?: boolean };
+/** `reports` items are for the president and committee leads; `admin` items only for the president. */
+type NavItem = { href: string; label: string; icon: Icon; access?: 'reports' | 'admin' };
 
 const navigation: NavItem[] = [
   { href: '/', label: 'Genel Bakış', icon: LayoutDashboard },
   { href: '/panolar', label: 'Panolar', icon: FolderKanban },
   { href: '/profilim', label: 'Profilim', icon: CircleUserRound },
-  { href: '/raporlar', label: 'Raporlar', icon: BarChart3, admin: true },
-  { href: '/komiteler', label: 'Komiteler', icon: Settings2, admin: true },
-  { href: '/kullanicilar', label: 'Kullanıcılar', icon: UsersRound, admin: true },
+  { href: '/raporlar', label: 'Raporlar', icon: BarChart3, access: 'reports' },
+  { href: '/komiteler', label: 'Komiteler', icon: Settings2, access: 'admin' },
+  { href: '/kullanicilar', label: 'Kullanıcılar', icon: UsersRound, access: 'admin' },
 ];
 
 const pageNames: Record<string, string> = {
   '/': 'Genel Bakış', '/panolar': 'Panolar', '/profilim': 'Profilim', '/raporlar': 'Raporlar',
   '/komiteler': 'Komiteler', '/kullanicilar': 'Kullanıcılar',
 };
+
+const canReport = (me: Me) => me.role === 'super_admin' || me.leadsCommittee;
+const canSee = (item: NavItem, me: Me) => !item.access || me.role === 'super_admin' || (item.access === 'reports' && me.leadsCommittee);
 
 function Brand() {
   return <a className="workspace-brand" href="/" aria-label="GDG OSTİM ana sayfa">
@@ -35,7 +40,8 @@ function Brand() {
 }
 
 function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobileOpen: boolean; closeMobile(): void; openOnboarding(): void }) {
-  const items = navigation.filter(item => !item.admin || me.role === 'super_admin');
+  const items = navigation.filter(item => canSee(item, me));
+  const workspace = items.filter(item => item.access !== 'admin'); const admin = items.filter(item => item.access === 'admin');
   const currentPath = location.pathname;
   return <>
     <button className={mobileOpen ? 'sidebar-scrim is-open' : 'sidebar-scrim'} aria-label="Menüyü kapat" onClick={closeMobile} />
@@ -43,10 +49,10 @@ function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobi
       <div className="sidebar-heading"><Brand /><Button className="mobile-close" size="icon" variant="ghost" aria-label="Menüyü kapat" onClick={closeMobile}><X size={20} /></Button></div>
       <nav className="sidebar-nav">
         <p>Çalışma Alanı</p>
-        {items.slice(0, 4).map(({ href, label, icon: NavIcon }) => <a key={href} href={href} className={currentPath === href ? 'is-active' : undefined} aria-current={currentPath === href ? 'page' : undefined}>
+        {workspace.map(({ href, label, icon: NavIcon }) => <a key={href} href={href} className={currentPath === href ? 'is-active' : undefined} aria-current={currentPath === href ? 'page' : undefined}>
           <NavIcon size={19} strokeWidth={1.9} /><span>{label}</span>
         </a>)}
-        {me.role === 'super_admin' && <><p>Yönetim</p>{items.slice(4).map(({ href, label, icon: NavIcon }) => <a key={href} href={href} className={currentPath === href ? 'is-active' : undefined} aria-current={currentPath === href ? 'page' : undefined}>
+        {admin.length > 0 && <><p>Yönetim</p>{admin.map(({ href, label, icon: NavIcon }) => <a key={href} href={href} className={currentPath === href ? 'is-active' : undefined} aria-current={currentPath === href ? 'page' : undefined}>
           <NavIcon size={19} strokeWidth={1.9} /><span>{label}</span>
         </a>)}</>}
       </nav>
@@ -57,7 +63,7 @@ function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobi
       </div>
       <div className="sidebar-footer">
         <details className="account-menu">
-          <summary><Avatar name={me.name} /><span><strong>{me.name}</strong><small>{me.role === 'super_admin' ? 'Başkan' : 'Üye'}</small></span><ChevronDown size={16} /></summary>
+          <summary><Avatar name={me.name} /><span><strong>{me.name}</strong><small>{me.role === 'super_admin' ? 'Başkan' : me.leadsCommittee ? 'Komite başkanı' : 'Üye'}</small></span><ChevronDown size={16} /></summary>
           <div className="account-popover">
             <span>{me.email}</span>
             <button onClick={async () => { await authClient.signOut(); location.assign('/giris'); }}><LogOut size={17} />Çıkış yap</button>
@@ -65,35 +71,6 @@ function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobi
         </details>
       </div>
     </aside>
-  </>;
-}
-
-const metrics = [
-  { label: 'Açık işler', value: 0, icon: ListTodo, tone: 'blue' },
-  { label: 'İncelemede', value: 0, icon: Clock3, tone: 'yellow' },
-  { label: 'Tamamlanan', value: 0, icon: CheckCircle2, tone: 'green' },
-  { label: 'Geciken', value: 0, icon: Clock3, tone: 'red' },
-];
-
-function Overview({ me }: { me: Me }) {
-  return <>
-    <div className="page-title-row"><div><h1>Genel Bakış</h1><p>Hoş geldin, {me.name}. Ekibinin güncel çalışma durumunu burada görebilirsin.</p></div><Button variant="primary" onClick={() => location.assign('/panolar')}>Panolara git</Button></div>
-    <div className="metric-grid" aria-label="Görev özeti">
-      {metrics.map(({ label, value, icon: MetricIcon, tone }) => <Card className={`metric-card tone-${tone}`} key={label}>
-        <span className="metric-icon"><MetricIcon size={20} strokeWidth={1.9} /></span>
-        <div><span>{label}</span><strong>{value}</strong></div>
-      </Card>)}
-    </div>
-    <div className="overview-grid">
-      <Card className="activity-card">
-        <header><div><h2>Yaklaşan işler</h2><p>Üzerine atanan ve tarihi yaklaşan görevler</p></div><a href="/panolar">Tümünü gör</a></header>
-        <EmptyState icon={<img className="empty-mascot" src="/mascot/empty.png" alt="" />} title="Henüz görev yok" description="Sana atanan işler burada son teslim tarihine göre listelenecek." action={<Button onClick={() => location.assign('/panolar')}>Panoyu aç</Button>} />
-      </Card>
-      <Card className="committee-card">
-        <header><h2>Komiteler</h2><p>Dahil olduğun ekiplerin kısa durumu</p></header>
-        <EmptyState icon={<UsersRound size={23} />} title="Komite bekleniyor" description="Başkan seni bir komiteye eklediğinde ekip bilgileri burada görünecek." />
-      </Card>
-    </div>
   </>;
 }
 
@@ -140,14 +117,16 @@ function OnboardingDialog({ open, admin, pending, error, finish, close }: { open
   </dialog>;
 }
 
-function Forbidden({ title }: { title: string }) {
+function Forbidden({ title, description = 'Bu sayfa yalnız başkan rolündeki hesaplar için açıktır.' }: { title: string; description?: string }) {
   return <><div className="page-title-row"><div><h1>{title}</h1></div></div>
-    <Card><EmptyState icon={<LockKeyhole size={23} />} title="Bu alana erişimin yok" description="Bu sayfa yalnız başkan rolündeki hesaplar için açıktır." action={<Button onClick={() => location.assign('/')}>Genel Bakış’a dön</Button>} /></Card></>;
+    <Card><EmptyState icon={<LockKeyhole size={23} />} title="Bu alana erişimin yok" description={description} action={<Button onClick={() => location.assign('/')}>Genel Bakış’a dön</Button>} /></Card></>;
 }
 
 function Page({ me, title }: { me: Me; title: string }) {
   if (location.pathname === '/') return <Overview me={me} />;
   if (location.pathname === '/panolar') return <Board me={me} />;
+  if (location.pathname === '/profilim') return <Profile me={me} />;
+  if (location.pathname === '/raporlar') return canReport(me) ? <Reports me={me} /> : <Forbidden title={title} description="Raporlar başkan ve komite başkanları içindir. Kendi sayaçların Profilim sayfasında." />;
   if (location.pathname === '/kullanicilar') return me.role === 'super_admin' ? <Users me={me} /> : <Forbidden title={title} />;
   if (location.pathname === '/komiteler') return me.role === 'super_admin' ? <Committees /> : <Forbidden title={title} />;
   return <Placeholder title={title} />;

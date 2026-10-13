@@ -74,7 +74,7 @@ describe('kapalı kayıt ve davet akışı', () => {
     const me = await request('/api/me', { headers: { cookie } });
     assert.equal(me.status, 200);
     const userId = (await response.json()).user.id;
-    assert.deepEqual(await me.json(), { id: userId, name: 'Başkan', email: admin.email, role: 'super_admin', onboardingCompletedAt: null });
+    assert.deepEqual(await me.json(), { id: userId, name: 'Başkan', email: admin.email, role: 'super_admin', onboardingCompletedAt: null, leadsCommittee: false });
 
     const invalidOnboarding = await request('/api/me/onboarding', { method: 'PATCH', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ completed: false }) });
     assert.equal(invalidOnboarding.status, 400);
