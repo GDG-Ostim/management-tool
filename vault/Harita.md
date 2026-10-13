@@ -21,6 +21,7 @@ ozet: "Ürün, mimari, tasarım ve operasyon notlarının kanonik dizini."
 | Tasarım dili | [[Tasarım/Arayüz]] |
 | Ekranlar | [[Tasarım/Ekranlar]] |
 | Görsel üretimi | [[Tasarım/Maskot ve Varlıklar]] |
+| Maskot final pozları | [[Tasarım/Varlıklar/Maskot Pozları]] |
 | Issue dağılımı | [[Operasyon/GitHub İşleri]] |
 | Docker ve bakım | [[Operasyon/Çalıştırma ve Teslim]] |
 | CI/CD | [[Operasyon/CI CD]] |
