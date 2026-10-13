@@ -1,26 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { MailCheck, MoreHorizontal, RefreshCw, Search, ShieldCheck, ShieldOff, UserCheck, UserPlus, UserX, UsersRound } from 'lucide-react';
-import { Avatar, Badge, Button, Card, Dialog, EmptyState, Field } from './ui';
+import { Avatar, Badge, Button, Card, Dialog, EmptyState, Field, Toast, type ToastMessage } from './ui';
 import type { Me } from './Dashboard';
+import { api } from './api';
 
 type Invitation = 'pending' | 'sent' | 'failed' | 'accepted';
 type User = { id: string; name: string; email: string; role: Me['role']; active: boolean; invitation: Invitation; invitationSentAt: string | null; createdAt: string };
 type Filter = 'all' | 'active' | 'invited' | 'inactive';
-type Toast = { tone: 'success' | 'error'; text: string } | null;
 type Pending = { user: User; change: { role: Me['role'] } | { active: boolean } } | null;
-
-class ApiError extends Error {}
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path, init?.body ? { ...init, headers: { 'Content-Type': 'application/json', ...init.headers } } : init);
-  } catch { throw new ApiError('Bağlantı kurulamadı. İnternet bağlantını kontrol edip yeniden dene.'); }
-  if (response.status === 401) { location.assign('/giris'); throw new ApiError('Oturumun sona erdi.'); }
-  const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
-  if (!response.ok) throw new ApiError(body?.error?.message ?? 'İşlem tamamlanamadı.');
-  return body as T;
-}
 
 const filters: Array<{ value: Filter; label: string }> = [
   { value: 'all', label: 'Tümü' }, { value: 'active', label: 'Aktif' }, { value: 'invited', label: 'Davetli' }, { value: 'inactive', label: 'Pasif' },
@@ -114,7 +101,8 @@ export function Users({ me }: { me: Me }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [toast, setToast] = useState<Toast>(null);
+  const [toast, setToast] = useState<ToastMessage>(null);
+  const closeToast = useCallback(() => setToast(null), []);
 
   async function load() {
     setLoadError(null);
@@ -122,11 +110,6 @@ export function Users({ me }: { me: Me }) {
     catch (reason) { setLoadError(reason instanceof Error ? reason.message : 'Kullanıcılar yüklenemedi.'); }
   }
   useEffect(() => { void load(); }, []);
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 5000);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   const counts = useMemo(() => {
     const result: Record<Filter, number> = { all: 0, active: 0, invited: 0, inactive: 0 };
@@ -204,6 +187,6 @@ export function Users({ me }: { me: Me }) {
           <Button variant={copy?.danger ? 'danger' : 'primary'} onClick={() => void confirm()} disabled={!!busyId} data-autofocus>{busyId ? 'Kaydediliyor…' : copy?.action}</Button></footer>
       </div>
     </Dialog>
-    {toast && <div className={`toast is-${toast.tone}`} role={toast.tone === 'error' ? 'alert' : 'status'}>{toast.text}<button aria-label="Bildirimi kapat" onClick={() => setToast(null)}>×</button></div>}
+    <Toast toast={toast} close={closeToast} />
   </>;
 }

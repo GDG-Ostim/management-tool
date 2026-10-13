@@ -6,7 +6,7 @@ ozet: "Minimal SQLite tabloları ve geçmişi koruyan ilişkiler."
 ---
 # Veri Modeli
 
-Bu şema uygulama sözleşmesidir; migration henüz yazılmadı. ID'ler opaque string; tüm tarihler UTC. Bir task tam bir komiteye aittir; tenant/organization tablosu gerekmez.
+Bu şema uygulama sözleşmesidir. `001-identity` ve `002-committees-tasks` migration'ları user_profiles, invitations, committees, committee_memberships, tasks, task_submissions ve task_reopens tablolarını kurdu; yorum, checklist, bağlantı ve etiket tabloları ilgili issue'larda eklenecek. ID'ler opaque string; tüm tarihler UTC. Bir task tam bir komiteye aittir; tenant/organization tablosu gerekmez.
 
 | Tablo | Ana alanlar |
 | --- | --- |

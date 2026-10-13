@@ -26,8 +26,8 @@ Her modülde input doğrulama → oturum → kaynak yetkisi → servis → DB s�
 | --- | --- |
 | Giriş/şifre | Better Auth `/api/auth/*` |
 | Oturum profili | `GET /api/me` |
-| Kullanıcı | `/api/users`, `/:id/invite`, `/:id/role`, `/:id/active` |
-| Komite | `/api/committees`, `/:id/members` |
+| Kullanıcı | `/api/users`, `PATCH /:id` (role, active), `/:id/invite` |
+| Komite | `/api/committees`, `PATCH /:id`, `PUT/DELETE /:id/members/:userId` |
 | Board | `GET /api/tasks?committeeId=&assigneeId=&status=&q=` |
 | Görev | `/api/tasks/:id`, `/:id/transition`, `/:id/archive` |
 | Alt kaynak | `/:id/comments`, `/:id/checklist`, `/:id/links`, `/:id/reviews` |

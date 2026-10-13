@@ -1,5 +1,37 @@
-import { forwardRef, useEffect, useRef, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+
+/** Horizontal scroller that fades the edge with hidden content and offers step buttons. */
+export function ScrollFade({ className, label, children, ...props }: HTMLAttributes<HTMLDivElement> & { label: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const update = () => {
+      const max = element.scrollWidth - element.clientWidth;
+      const start = element.scrollLeft > 2; const end = element.scrollLeft < max - 2;
+      setEdges(current => current.start === start && current.end === end ? current : { start, end });
+    };
+    update();
+    element.addEventListener('scroll', update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    for (const child of element.children) observer.observe(child);
+    return () => { element.removeEventListener('scroll', update); observer.disconnect(); };
+  }, []);
+  const step = (direction: 1 | -1) => {
+    const element = ref.current;
+    if (!element) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    element.scrollBy({ left: direction * Math.max(element.clientWidth * .8, 240), behavior: reduce ? 'auto' : 'smooth' });
+  };
+  return <div className={classes('scroll-fade', edges.start && 'has-start', edges.end && 'has-end')}>
+    <div ref={ref} className={classes('scroll-fade-viewport', className)} {...props}>{children}</div>
+    <button type="button" className="scroll-fade-button is-start" aria-label={`${label}: sola kaydır`} onClick={() => step(-1)}><ChevronLeft size={18} /></button>
+    <button type="button" className="scroll-fade-button is-end" aria-label={`${label}: sağa kaydır`} onClick={() => step(1)}><ChevronRight size={18} /></button>
+  </div>;
+}
 
 function classes(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -58,4 +90,18 @@ export function Dialog({ open, title, description, onClose, busy = false, childr
       {children}
     </>}
   </dialog>;
+}
+
+export type ToastMessage = { tone: 'success' | 'error'; text: string; image?: string } | null;
+
+export function Toast({ toast, close }: { toast: ToastMessage; close(): void }) {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(close, 5000);
+    return () => clearTimeout(timer);
+  }, [toast, close]);
+  if (!toast) return null;
+  return <div className={`toast is-${toast.tone}${toast.image ? ' has-image' : ''}`} role={toast.tone === 'error' ? 'alert' : 'status'}>
+    {toast.image && <img src={toast.image} alt="" />}<span>{toast.text}</span><button aria-label="Bildirimi kapat" onClick={close}>×</button>
+  </div>;
 }

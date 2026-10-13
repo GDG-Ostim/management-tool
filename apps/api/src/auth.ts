@@ -6,7 +6,7 @@ import { adminAc, userAc } from 'better-auth/plugins/admin/access';
 import type Database from 'better-sqlite3';
 import type { Config } from './config.js';
 import type { Mailer } from './mail.js';
-import { canSignIn, migrateIdentity } from './database.js';
+import { canSignIn, migrateIdentity, migrateWork } from './database.js';
 
 export async function createAuth(config: Config, db: Database.Database, mailer: Mailer) {
   const auth = betterAuth({
@@ -49,6 +49,7 @@ export async function createAuth(config: Config, db: Database.Database, mailer: 
   const migration = await getMigrations(auth.options);
   await migration.runMigrations();
   migrateIdentity(db);
+  migrateWork(db);
   return auth;
 }
 
