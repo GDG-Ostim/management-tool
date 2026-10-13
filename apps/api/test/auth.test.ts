@@ -91,7 +91,7 @@ describe('kapalı kayıt ve davet akışı', () => {
   test('başkan kullanıcı davet eder; bağlantı tek kullanımlıdır ve hesabı etkinleştirir', async () => {
     const created = await request('/api/users', { method: 'POST', headers: { cookie: adminCookie, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Yeni Üye', email: 'uye@example.com' }) });
     assert.equal(created.status, 201); assert.equal((await created.json()).invitation, 'sent');
-    assert.equal(messages.length, 1); assert.equal(messages[0].email, 'uye@example.com');
+    assert.equal(messages.length, 1); assert.equal(messages[0].email, 'uye@example.com'); assert.equal(messages[0].kind, 'invite');
     const token = new URL(messages[0].url).pathname.split('/').at(-1)!;
     const reset = await request('/api/auth/reset-password', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, newPassword: 'Yeni-Uye-Sifresi-123!' }) });
     assert.equal(reset.status, 200);
@@ -166,5 +166,7 @@ describe('kapalı kayıt ve davet akışı', () => {
     const existing = await request('/api/password-reset', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'uye@example.com' }) });
     assert.equal(unknown.status, 202); assert.equal(existing.status, 202);
     assert.deepEqual(await unknown.json(), await existing.json());
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.equal(messages.at(-1)?.email, 'uye@example.com'); assert.equal(messages.at(-1)?.kind, 'reset');
   });
 });

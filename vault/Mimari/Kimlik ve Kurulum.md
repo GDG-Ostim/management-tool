@@ -34,6 +34,7 @@ Kullanıcı pasifleştirme/şifre değişikliği uygun oturumları iptal eder. A
 
 ## Resend
 `RESEND_API_KEY`, `MAIL_FROM`, `BETTER_AUTH_SECRET`, `APP_URL`, `DATABASE_PATH` sunucu config'idir. Gerçek kullanıcılara e-posta için doğrulanmış sender domain gerekir. Yerel ve CI testlerinde sahte mail adapter'ı kullanılır; gerçek mail gönderilmez.
+E-postalar `apps/api/src/mail-templates.ts` içindeki Türkçe HTML + düz metin şablonlarıyla gider: kabul edilmemiş davette “Çalışma alanına hoş geldin / Şifremi belirle”, kabul edilmiş hesapta “Şifreni yenile”. Şablon e-posta istemcileri için tablo ve inline stil kullanır, harici görsel yüklemez, adı HTML kaçışlarıyla basar, 1 saatlik tek kullanım notu ve düz bağlantı yedeği içerir. Yerel denemede `onboarding@resend.dev` gönderici adresi yalnız Resend hesabının sahibine teslim eder; gerçek üyeler için doğrulanmış domain gerekir.
 Gönderim hatası yakalanır ve yöneticiye durum döner; reset tokenı/parola loglanmaz. Yerel testlerde sahte mail adapter'ı kullanılır.
 
 Kaynaklar: [[Sistem/Teknik Kaynaklar]].
