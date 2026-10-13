@@ -7,7 +7,7 @@ ozet: "Referanslara dayalı minimal dashboard dili ve Google renk vurguları."
 # Arayüz
 
 ## Uygulama durumu
-Responsive dashboard iskeleti hazırdır. Masaüstünde 256px sabit sidebar; mobilde açılır menü kullanılır. Genel Bakış, Panolar, Profilim ve role göre Raporlar; başkanda Komiteler ile Kullanıcılar bağlantıları görünür. Hesap menüsü sidebar altındadır. Genel Bakış rapor API'sinden gelen dört görev sayacını, kişinin yaklaşan açık işlerini ve komite listesini gösterir; veri yokken maskotlu boş durum kullanılır.
+Responsive dashboard iskeleti hazırdır. Masaüstünde 256px sabit sidebar; mobilde açılır menü kullanılır. Genel Bakış, Panolar, Profilim ve role göre Raporlar; başkanda Komiteler ile Kullanıcılar bağlantıları görünür. Hesap menüsü sidebar altındadır; kısa ekranlarda (yatay telefon, küçük pencere) sidebar kendi içinde kayar. Genel Bakış rapor API'sinden gelen dört görev sayacını, kişinin yaklaşan açık işlerini ve komite listesini gösterir; veri yokken maskotlu boş durum kullanılır.
 
 Bileşenler shadcn/ui'nun açık kod ve composition yaklaşımıyla repo içinde tutulur; ürünün mevcut CSS tokenlarına göre sadeleştirilir. Lucide tek ikon setidir. Klavye focus halkaları, semantik başlıklar, `aria-current`, Escape ile mobil menü kapatma ve reduced-motion davranışı uygulanmıştır. Veri bağlı olmayan ekranlar açık bir hazırlık durumu gösterir; sahte metrik üretilmez.
 

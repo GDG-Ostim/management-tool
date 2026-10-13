@@ -28,7 +28,8 @@ function Login() {
     const data = new FormData(event.currentTarget);
     const result = await authClient.signIn.email({ email: String(data.get('email')), password: String(data.get('password')) });
     setPending(false);
-    if (result.error) setNotice({ kind: 'error', text: 'E-posta veya şifre hatalı. Hesabınız henüz etkinleştirilmemiş de olabilir.' });
+    if (result.error?.status === 429) setNotice({ kind: 'error', text: 'Çok fazla giriş denemesi yapıldı. Biraz bekleyip yeniden deneyin.' });
+    else if (result.error) setNotice({ kind: 'error', text: 'E-posta veya şifre hatalı. Hesabınız henüz etkinleştirilmemiş de olabilir.' });
     else window.location.assign('/');
   }
   return <AuthLayout title="Tekrar hoş geldiniz" description="Ekibinizin çalışma alanına giriş yapın.">

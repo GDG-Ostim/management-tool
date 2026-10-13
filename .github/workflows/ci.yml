@@ -38,6 +38,22 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run end-to-end flow
+        run: npm run test:e2e
+
+      - name: Upload end-to-end report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
+
       - name: Build applications
         run: npm run build
 
