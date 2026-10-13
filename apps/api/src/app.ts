@@ -9,6 +9,7 @@ import { createMailer, type Mailer } from './mail.js';
 import { HttpError } from './errors.js';
 import { registerCommitteeRoutes } from './committees.js';
 import { registerTaskRoutes } from './tasks.js';
+import { registerReportRoutes } from './reports.js';
 
 function throttle(max: number, windowMs: number): RequestHandler {
   const buckets = new Map<string, { count: number; until: number }>();
@@ -133,6 +134,7 @@ export async function createApplication(config: Config, mailer: Mailer = createM
   });
   registerCommitteeRoutes(app, db, { requireMember, requireAdmin });
   registerTaskRoutes(app, db, { requireMember });
+  registerReportRoutes(app, db, { requireMember });
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'İşlem bulunamadı.' } }));
   if (config.production) {
     app.use(express.static(resolve('apps/web/dist')));
