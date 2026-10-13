@@ -25,7 +25,13 @@ export type Task = {
   id: string; committeeId: string; committeeName: string; title: string; description: string;
   assigneeId: string; assigneeName: string; createdBy: string; status: TaskStatus; priority: Priority;
   dueAt: string | null; version: number; createdAt: string; updatedAt: string; completedAt: string | null;
+  returned: 'rejected' | 'reopened' | null;
   permissions: { edit: boolean; manage: boolean; moves: TaskStatus[] };
+};
+export type ReviewHistory = {
+  submissions: Array<{ id: string; submittedAt: string; submittedBy: string; assigneeName: string; dueAt: string | null; onTime: boolean | null;
+    resolution: 'pending' | 'approved' | 'rejected' | 'withdrawn'; resolvedAt: string | null; resolvedBy: string | null; reason: string | null }>;
+  reopens: Array<{ id: string; createdAt: string; actorName: string; reason: string }>;
 };
 
 export type Summary = { completed: number; onTime: number; late: number; undated: number; openOverdue: number; overdueTotal: number; inReview: number; open: number };

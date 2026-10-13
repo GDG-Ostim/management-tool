@@ -136,7 +136,9 @@ describe('komite ve görev akışı', () => {
     const rejectWithoutReason = await move(cookies.lead, 'in_progress', version);
     assert.equal(rejectWithoutReason.body.error.code, 'REASON_REQUIRED');
     result = await move(cookies.lead, 'in_progress', version, 'Logo eksik'); version = result.body.version;
+    assert.equal(result.body.returned, 'rejected');
     result = await move(cookies.member, 'in_review', version); version = result.body.version;
+    assert.equal(result.body.returned, null);
     result = await move(cookies.member, 'in_progress', version); version = result.body.version;
     result = await move(cookies.member, 'in_review', version); version = result.body.version;
     result = await move(cookies.lead, 'done', version);
@@ -144,7 +146,15 @@ describe('komite ve görev akışı', () => {
     assert.equal((await move(cookies.member, 'in_progress', version, 'Tekrar')).status, 403);
     assert.equal((await move(cookies.lead, 'in_progress', version)).body.error.code, 'REASON_REQUIRED');
     result = await move(cookies.admin, 'in_progress', version, 'Tarih değişti');
-    assert.equal(result.status, 200); assert.equal(result.body.completedAt, null);
+    assert.equal(result.status, 200); assert.equal(result.body.completedAt, null); assert.equal(result.body.returned, 'reopened');
+
+    const history = await request(`/api/tasks/${ids.memberTask}/reviews`, cookies.member);
+    assert.equal(history.status, 200);
+    assert.deepEqual(history.body.submissions.map((item: { resolution: string; reason: string | null; resolvedBy: string | null }) => [item.resolution, item.reason, item.resolvedBy]),
+      [['approved', null, 'lead'], ['withdrawn', null, 'member'], ['rejected', 'Logo eksik', 'lead']]);
+    assert.equal(history.body.submissions[0].submittedBy, 'member');
+    assert.deepEqual(history.body.reopens.map((item: { actorName: string; reason: string }) => [item.actorName, item.reason]), [['Başkan', 'Tarih değişti']]);
+    assert.equal((await request(`/api/tasks/${ids.memberTask}/reviews`, cookies.outsider)).status, 404);
 
     const submissions = application.db.prepare('SELECT resolution, reason FROM task_submissions WHERE task_id = ? ORDER BY submitted_at, rowid').all(ids.memberTask);
     assert.deepEqual(submissions, [{ resolution: 'rejected', reason: 'Logo eksik' }, { resolution: 'withdrawn', reason: null }, { resolution: 'approved', reason: null }]);
