@@ -16,16 +16,18 @@ Kırmızı/bordo gövdeli, iri amber gözlü, kıvırcık yeleli küçük ejderh
 ![[Tasarım/Referanslar/maskot-arka.png]]
 
 ## Tek üretim paketi
-- Şeffaf arka planlı karşılama/işaret etme pozu: tanıtım.
-- Küçük sakin idle pozu: sidebar yardım alanı.
-- Hafif kutlama pozu: görev onayı sonrası kısa geri bildirim.
-- Basit boş durum pozu: henüz görev yok.
+- Şeffaf arka planlı karşılama/işaret etme pozu: tanıtım. **Hazır.**
+- Küçük sakin idle pozu: sidebar yardım alanı. **Hazır.**
+- Hafif kutlama pozu: görev onayı sonrası kısa geri bildirim. **Hazır.**
+- Basit boş durum pozu: henüz görev yok. **Hazır.**
+
+Onaylı dosyalar `apps/web/public/mascot/` içindedir. Brief, prompt ve kalite kaydı: [[Tasarım/Varlıklar/Maskot Pozları]]. Arayüz entegrasyonu #16 içinde yapılır.
 
 MVP'de seslendirme, video ve sürekli büyük animasyon şart değil. Gerekirse mevcut pozlara CSS ile küçük hareket verilir; reduced-motion desteklenir. Ekran kontrastı ve çalışma alanı karakterden önce gelir.
 
 ## Üretim ve kayıt
 Higgsfield CLI ve companion skills hazır. Üretim sırasında güncel model/parametreler CLI'den doğrulanır; bu plan belirli model sürümüne bağımlı değildir.
-Her final için kısa brief, kullanılan prompt, kaynak referansları, yerel final dosyası ve kontrol notu `vault/Tasarım/Varlıklar/` altında tutulur. Onaylı kopya daha sonra `apps/web/public/mascot/` içine alınır. Public notlara hesap bilgisi, kredi bakiyesi, API anahtarı veya özel indirme linki konulmaz.
+Her final için kısa brief, kullanılan prompt, kaynak referansları, yerel final dosyası ve kontrol notu `vault/Tasarım/Varlıklar/` altında tutulur. Onaylı kopya `apps/web/public/mascot/` içine alınır. Public notlara hesap bilgisi, kredi bakiyesi, API anahtarı veya özel indirme linki konulmaz.
 
 Kontrol: karakter tutarlılığı, alpha kenarları, 48–96px görünürlük, gereksiz gölge/zemin, responsive yerleşim. Kullanıcının verdiği orijinal dosyalar değiştirilmez. Referanstaki köşe işareti uygulama UI'si için ayrı asset olarak kullanılmaz.
 

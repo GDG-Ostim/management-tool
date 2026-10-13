@@ -95,6 +95,11 @@
     "ozet": "Maskot referansları ve yalnız Poyraz'a ait Higgsfield üretim işi."
   },
   {
+    "path": "vault/Tasarım/Varlıklar/Maskot Pozları.md",
+    "alan": "assets",
+    "ozet": "Higgsfield ile üretilen dört onaylı maskot pozunun brief ve kalite kaydı."
+  },
+  {
     "path": "vault/Ürün/Görev Akışı.md",
     "alan": "tasks",
     "ozet": "Kanban geçişleri, görev alanları, inceleme ve yeniden açma davranışı."
