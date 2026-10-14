@@ -7,6 +7,8 @@ import { HttpError } from './errors.js';
 
 export const statuses: readonly TaskStatus[] = ['todo', 'in_progress', 'in_review', 'done'];
 const priorities: readonly Priority[] = ['low', 'normal', 'high'];
+/** Board list caps: every open task of a community fits; Done shows the most recent completions. */
+export const boardLimits = { open: 1000, done: 200 };
 
 type TaskRow = {
   id: string; committeeId: string; committeeName: string; title: string; description: string;
@@ -101,7 +103,12 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
     if (typeof query.q === 'string' && query.q.trim()) {
       where.push("t.title LIKE @q ESCAPE '\\'"); params.q = `%${query.q.trim().slice(0, 100).replace(/[\\%_]/g, char => `\\${char}`)}%`;
     }
-    const rows = db.prepare(`${select} WHERE ${where.join(' AND ')} ORDER BY t.updated_at DESC LIMIT 500`).all(params) as TaskRow[];
+    // Open work is never cut off by old completed work: open tasks come first, the Done column shows the latest completions.
+    const filter = where.join(' AND ');
+    const rows = [
+      ...db.prepare(`${select} WHERE ${filter} AND t.status != 'done' ORDER BY t.updated_at DESC LIMIT ${boardLimits.open}`).all(params),
+      ...db.prepare(`${select} WHERE ${filter} AND t.status = 'done' ORDER BY t.completed_at DESC LIMIT ${boardLimits.done}`).all(params),
+    ] as TaskRow[];
     const manages = new Map<string, boolean>();
     res.json(rows.map(row => {
       if (!manages.has(row.committeeId)) manages.set(row.committeeId, committeeAccess(db, actor, row.committeeId).manage);

@@ -1,8 +1,14 @@
 # GDG Management Tool
 
-GDG OSTİM için tek topluluklu komite ve görev yönetimi. React, Express, Better Auth ve SQLite ile geliştirilecek Türkçe dashboard.
+GDG OSTİM için tek topluluklu komite ve görev yönetimi: React, Express, Better Auth ve SQLite ile Türkçe, responsive bir çalışma alanı.
 
-**Durum:** Kimlik altyapısı, kapalı giriş ve kullanıcı daveti akışı hazır; kalan geliştirme GitHub issue'larında.
+**Durum:** MVP tamamlandı.
+
+- **Hesaplar:** Başkan kullanıcıları davet eder (Resend). Herkese açık kayıt yoktur.
+- **Komiteler ve panolar:** Komiteler kurulur, başkan ve üyeler atanır. Her komitenin sürükle-bırak Kanban panosu vardır.
+- **Görevler:** Etiket, kontrol listesi, çıktı bağlantısı ve yorum taşır. Komite başkanı inceleyip onaylar, reddeder veya yeniden açar; geçmiş korunur.
+- **Raporlar:** Kişi, komite ve genel raporlar teslim zamanına göre zamanında/geç sayar.
+- **Kurulum:** Tek Docker servisi, kalıcı SQLite, yedek ve geri yükleme.
 
 - [Public Kanban](https://github.com/orgs/GDG-Ostim/projects/1)
 - [Geliştirme işleri](https://github.com/GDG-Ostim/management-tool/issues)
@@ -27,16 +33,27 @@ npm run dev
 
 Bootstrap şifresini `.env` içine yazmayın. `BOOTSTRAP_ADMIN_PASSWORD_FILE`, repodan dışlanan ve yalnız ilk kurulumda kullanılan bir dosyayı göstermelidir. `npm run bootstrap` tekrar çalıştırıldığında mevcut başkan hesabını veya şifresini değiştirmez.
 
-Uygulama varsayılan olarak `http://localhost:5173` adresinde açılır. API `http://localhost:3000` üzerinde çalışır; Vite geliştirme sunucusu `/api` isteklerini API'ye yönlendirir.
+Uygulama `http://127.0.0.1:5173` adresinde açılır. API `127.0.0.1:3000` üzerinde çalışır; Vite geliştirme sunucusu `/api` isteklerini API'ye yönlendirir. Tarayıcıdaki adres `.env` içindeki `APP_URL` ile birebir aynı olmalıdır: API başka origin'den gelen yazma isteklerini reddeder, bu yüzden `localhost` ile açılan sayfada giriş çalışmaz.
+
+Proje yapısı:
+- `apps/api`: Express API, Better Auth ve SQLite migration'ları; testler `apps/api/test` altında.
+- `apps/web`: React + Vite arayüzü.
+- `packages/shared`: İki uygulamanın ortak tipleri.
+- `e2e`: Playwright ile uçtan uca akış.
+- `vault`: Ürün ve mimari kararları.
 
 ## Doğrulama
 
 ```sh
 npm run vault:index
 npm run vault:check
+npm run typecheck
 npm test
+npm run test:e2e
 npm run build
 ```
+
+`npm run test:e2e` web uygulamasını derler ve gerçek uygulamayı geçici bir veritabanıyla açar. Davetten rapora kadar akışı Chromium'da yürütür (ilk kullanımda `npx playwright install chromium` gerekir). CI bunlara ek olarak Docker duman testini çalıştırır.
 
 Not güncellendiğinde `npm run vault:index` çalıştırın ve indeksi de commit'e ekleyin. Codex ve Claude Code için ortak kurallar [AGENTS.md](AGENTS.md) içindedir.
 

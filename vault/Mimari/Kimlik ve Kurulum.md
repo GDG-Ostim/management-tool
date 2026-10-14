@@ -12,7 +12,7 @@ Better Auth, Express ve better-sqlite3 altyapısı kuruldu. Açık kayıt hem co
 Türkçe giriş, şifremi unuttum ve şifre belirleme ekranları hazırdır. Davet kabul edilmeden uygulama oturumu açılamaz; şifre sıfırlanınca eski oturumlar iptal edilir. `PATCH /api/users/:id` yalnız `role` (super_admin/user) ve `active` alanlarını kabul eder. Pasifleştirme aynı transaction içinde kullanıcının oturumlarını siler; pasif hesaba davet gönderilmez, yeniden etkinleştirmede şifre korunur. API entegrasyon testleri bootstrap, kapalı kayıt, davet, tek kullanımlık token, tekrar gönderim, genel reset cevabı ve origin korumasını doğrular.
 
 ## İlk başkan
-Önerilen uygulama: yalnız sunucuda çalışan idempotent bootstrap komutu. `BOOTSTRAP_ADMIN_EMAIL` ve `BOOTSTRAP_ADMIN_NAME` ortam değişkenidir. Başlangıç şifresi `BOOTSTRAP_ADMIN_PASSWORD_FILE` ile Docker secret dosyasından okunur; repoya veya loglara yazılmaz. E-posta/name secret sayılmaz; şifre kalıcı .env içinde tutulmaz.
+Uygulama: yerelde `npm run bootstrap`, Docker'da üretim girişi (`start.ts`) boş kurulumda aynı idempotent bootstrap'ı secret dosyası varsa kendiliğinden çalıştırır. `BOOTSTRAP_ADMIN_EMAIL` ve `BOOTSTRAP_ADMIN_NAME` ortam değişkenidir. Başlangıç şifresi `BOOTSTRAP_ADMIN_PASSWORD_FILE` ile Docker secret dosyasından okunur; repoya veya loglara yazılmaz. E-posta/name secret sayılmaz; şifre kalıcı .env içinde tutulmaz.
 
 Boş kurulumda migration → bootstrap → servis başlangıcı sırası. Bootstrap tamamlandı işareti DB'de korunur. Restart mevcut hesabın şifresini değiştirmez ve yeni yönetici yaratmaz. İlk işlemden sonra secret mount kaldırılabilir. Başlangıç şifresi güçlü, tek kurulumluk; ilk girişten sonra hesap ayarından değiştirilir. Herkese açık “ilk kullanıcı admin olur” endpoint'i yoktur.
 
