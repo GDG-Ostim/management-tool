@@ -50,7 +50,9 @@ curl -sf -X POST "$base/api/committees" -H "Cookie: $cookie" -H "Origin: $origin
 compose restart app && compose up -d --wait --wait-timeout 60
 cookie=$(sign_in); test -n "$cookie"
 committees "$cookie" | grep -q '"name":"Etkinlik"'
-test "$(compose logs app | grep -c 'İlk başkan oluşturuldu')" = 1
+# Bootstrap ran once: still exactly one president, and this start did not create another.
+test "$(curl -sf "$base/api/users" -H "Cookie: $cookie" | grep -o '"role":"super_admin"' | wc -l)" = 1
+if compose logs app | tail -n 5 | grep -q 'İlk başkan oluşturuldu'; then echo 'Bootstrap ran again on restart'; exit 1; fi
 compose logs app | grep -q 'Başlangıç yedeği alındı'
 
 step 'Online backup, change, restore'
