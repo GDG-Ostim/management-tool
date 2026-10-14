@@ -52,7 +52,8 @@ export function registerCommitteeRoutes(app: Express, db: Database.Database, gua
   app.patch('/api/committees/:id', requireMember, requireAdmin, (req, res) => {
     const body = plainObject(req.body, ['name', 'description', 'archived']);
     const id = String(req.params.id);
-    const name = text(body.name, 'Komite adı', 80, false);
+    // A name is optional in the patch, but when sent it must not be blank.
+    const name = text(body.name, 'Komite adı', 80, body.name !== undefined);
     const description = text(body.description, 'Açıklama', 500, false);
     if (body.archived !== undefined && typeof body.archived !== 'boolean') throw new HttpError(400, 'INVALID_COMMITTEE', 'Arşiv bilgisi geçersiz.');
     db.transaction(() => {

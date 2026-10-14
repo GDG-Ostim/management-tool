@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Archive, ArchiveRestore, FolderKanban, Plus, RefreshCw, UserMinus, UsersRound } from 'lucide-react';
+import { Archive, ArchiveRestore, FolderKanban, Pencil, Plus, RefreshCw, UserMinus, UsersRound } from 'lucide-react';
 import { api, errorMessage, type Committee, type CommitteeDetail, type CommitteeRole } from './api';
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, Field, Toast, type ToastMessage } from './ui';
 
 type UserOption = { id: string; name: string; email: string; active: boolean };
 const roleLabel: Record<CommitteeRole, string> = { lead: 'Komite başkanı', member: 'Üye' };
 
-function CreateCommitteeDialog({ open, close, created }: { open: boolean; close(): void; created(committee: CommitteeDetail): void }) {
+/** Creates a committee, or edits name and description when `committee` is given. */
+function CommitteeDialog({ open, committee, close, saved }: { open: boolean; committee?: CommitteeDetail; close(): void; saved(committee: CommitteeDetail): void }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { if (open) setError(null); }, [open]);
@@ -15,17 +16,20 @@ function CreateCommitteeDialog({ open, close, created }: { open: boolean; close(
     const form = event.currentTarget; const data = new FormData(form);
     setPending(true); setError(null);
     try {
-      const committee = await api<CommitteeDetail>('/api/committees', { method: 'POST', body: JSON.stringify({ name: String(data.get('name')).trim(), description: String(data.get('description')).trim() }) });
-      form.reset(); created(committee);
-    } catch (reason) { setError(errorMessage(reason, 'Komite oluşturulamadı.')); }
+      const body = JSON.stringify({ name: String(data.get('name')).trim(), description: String(data.get('description')).trim() });
+      const result = committee
+        ? await api<CommitteeDetail>(`/api/committees/${committee.id}`, { method: 'PATCH', body })
+        : await api<CommitteeDetail>('/api/committees', { method: 'POST', body });
+      form.reset(); saved(result);
+    } catch (reason) { setError(errorMessage(reason, committee ? 'Komite güncellenemedi.' : 'Komite oluşturulamadı.')); }
     finally { setPending(false); }
   }
-  return <Dialog open={open} title="Komite oluştur" description="Komite oluşturulduktan sonra üyelerini ve komite başkanını ekleyebilirsin." onClose={close} busy={pending}>
-    <form className="dialog-form" onSubmit={submit}>
-      <Field label="Komite adı" name="name" required maxLength={80} autoComplete="off" data-autofocus placeholder="Örn. Etkinlik" />
-      <label className="ui-field"><span>Açıklama</span><textarea className="ui-input" name="description" rows={3} maxLength={500} placeholder="Komitenin kısa sorumluluk alanı" /></label>
+  return <Dialog open={open} title={committee ? 'Komiteyi düzenle' : 'Komite oluştur'} description={committee ? 'Ad ve açıklama panolarda ve raporlarda hemen güncellenir.' : 'Komite oluşturulduktan sonra üyelerini ve komite başkanını ekleyebilirsin.'} onClose={close} busy={pending}>
+    <form className="dialog-form" onSubmit={submit} key={committee ? `${committee.id}-${committee.name}` : 'new'}>
+      <Field label="Komite adı" name="name" required maxLength={80} autoComplete="off" data-autofocus placeholder="Örn. Etkinlik" defaultValue={committee?.name} />
+      <label className="ui-field"><span>Açıklama</span><textarea className="ui-input" name="description" rows={3} maxLength={500} placeholder="Komitenin kısa sorumluluk alanı" defaultValue={committee?.description} /></label>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <footer><Button variant="ghost" onClick={close} disabled={pending}>Vazgeç</Button><Button type="submit" variant="primary" disabled={pending}>{pending ? 'Oluşturuluyor…' : 'Oluştur'}</Button></footer>
+      <footer><Button variant="ghost" onClick={close} disabled={pending}>Vazgeç</Button><Button type="submit" variant="primary" disabled={pending}>{pending ? 'Kaydediliyor…' : committee ? 'Kaydet' : 'Oluştur'}</Button></footer>
     </form>
   </Dialog>;
 }
@@ -33,6 +37,7 @@ function CreateCommitteeDialog({ open, close, created }: { open: boolean; close(
 function CommitteePanel({ id, users, changed, notify }: { id: string; users: UserOption[]; changed(committee: CommitteeDetail): void; notify(toast: ToastMessage): void }) {
   const [detail, setDetail] = useState<CommitteeDetail | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     setDetail(null); setError(null);
@@ -58,6 +63,7 @@ function CommitteePanel({ id, users, changed, notify }: { id: string; users: Use
     <header className="committee-panel-head">
       <div><h2>{detail.name}{archived && <Badge>Arşivde</Badge>}</h2><p>{detail.description || 'Açıklama eklenmemiş.'}</p></div>
       <span className="committee-actions">
+        <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil size={16} />Düzenle</Button>
         {!archived && <Button onClick={() => location.assign(`/panolar?komite=${detail.id}`)}><FolderKanban size={17} />Panoyu aç</Button>}
         <Button variant="ghost" disabled={busy} onClick={() => void run(api(`/api/committees/${id}`, { method: 'PATCH', body: JSON.stringify({ archived: !archived }) }), archived ? `${detail.name} arşivden çıkarıldı.` : `${detail.name} arşivlendi.`)}>
           {archived ? <><ArchiveRestore size={17} />Arşivden çıkar</> : <><Archive size={17} />Arşivle</>}
@@ -91,6 +97,8 @@ function CommitteePanel({ id, users, changed, notify }: { id: string; users: Use
       <select className="ui-input" name="role" aria-label="Komite rolü" defaultValue="member"><option value="member">Üye</option><option value="lead">Komite başkanı</option></select>
       <Button type="submit" disabled={busy || !candidates.length}><Plus size={17} />Ekle</Button>
     </form>}
+    <CommitteeDialog open={editing} committee={detail} close={() => setEditing(false)}
+      saved={next => { setEditing(false); setDetail(next); changed(next); notify({ tone: 'success', text: `${next.name} güncellendi.` }); }} />
   </Card>;
 }
 
@@ -131,7 +139,7 @@ export function Committees() {
         </nav>
         {selected && <CommitteePanel id={selected} users={users} changed={merge} notify={setToast} />}
       </div>}
-    <CreateCommitteeDialog open={creating} close={() => setCreating(false)} created={committee => {
+    <CommitteeDialog open={creating} close={() => setCreating(false)} saved={committee => {
       setCreating(false); setCommittees(list => [...(list ?? []), committee].sort((a, b) => a.name.localeCompare(b.name, 'tr')));
       setSelected(committee.id); setToast({ tone: 'success', text: `${committee.name} komitesi oluşturuldu.` });
     }} />

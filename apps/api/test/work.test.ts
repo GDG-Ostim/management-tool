@@ -162,6 +162,18 @@ describe('komite ve görev akışı', () => {
     assert.deepEqual(reopen, { reason: 'Tarih değişti', linked: 1 });
   });
 
+  test('başkan komitenin adını ve açıklamasını düzenler; ad tekil kalır', async () => {
+    assert.equal((await request(`/api/committees/${committeeId}`, cookies.lead, 'PATCH', { name: 'Etkinlik Ekibi' })).status, 403);
+    assert.equal((await request(`/api/committees/${committeeId}`, cookies.admin, 'PATCH', { name: 'medya' })).body.error.code, 'COMMITTEE_EXISTS');
+    assert.equal((await request(`/api/committees/${committeeId}`, cookies.admin, 'PATCH', { name: '  ' })).status, 400);
+    const renamed = await request(`/api/committees/${committeeId}`, cookies.admin, 'PATCH', { name: 'Etkinlik Ekibi', description: 'Buluşma ve konferanslar' });
+    assert.equal(renamed.status, 200);
+    assert.deepEqual([renamed.body.name, renamed.body.description], ['Etkinlik Ekibi', 'Buluşma ve konferanslar']);
+    const board = (await request(`/api/tasks?committeeId=${committeeId}`, cookies.member)).body as Array<{ committeeName: string }>;
+    assert.ok(board.length && board.every(task => task.committeeName === 'Etkinlik Ekibi'));
+    assert.equal((await request(`/api/committees/${committeeId}`, cookies.admin, 'PATCH', { name: 'Etkinlik' })).status, 200);
+  });
+
   test('açık görevi olan üye çıkarılamaz ve komite arşivlenemez', async () => {
     const removal = await request(`/api/committees/${committeeId}/members/${ids.other}`, cookies.admin, 'DELETE');
     assert.equal(removal.status, 409); assert.equal(removal.body.error.code, 'MEMBER_HAS_OPEN_TASKS');
