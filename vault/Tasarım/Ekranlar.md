@@ -21,7 +21,7 @@ ozet: "MVP ekran listesi ve her ekranın işlevi."
 
 Rapor ekranları uygulama durumu: Profilim ad, e-posta, komite rozetleri, dört sayaç, durum filtreli görev tablosu ve şifre değiştirme (diğer oturumları kapatır) içerir. Raporlar ekranında kırılım tabloları bir alt rapora bağlanır; tablolar 900px altında etiketli kartlara döner. Hesap ve rapor kuralları [[Ürün/Raporlar]] içindedir.
 
-Komiteler uygulama durumu: başkan komite oluşturur, açıklamasını görür, üye ekler, komite rolünü (komite başkanı/üye) değiştirir, açık görevi olmayan üyeyi çıkarır ve açık görevi olmayan komiteyi arşivler. Ad/açıklama düzenleme #7 kapsamında kalır. Panolar uygulama durumu [[Ürün/Görev Akışı]] içindedir.
+Komiteler uygulama durumu: başkan komite oluşturur, açıklamasını görür, üye ekler, komite rolünü (komite başkanı/üye) değiştirir, açık görevi olmayan üyeyi çıkarır ve açık görevi olmayan komiteyi arşivler. Komite panelindeki Düzenle aynı pencereyle ad ve açıklamayı günceller; ad komiteler arasında büyük/küçük harften bağımsız tekildir ve boş bırakılamaz. Panolar uygulama durumu [[Ürün/Görev Akışı]] içindedir.
 
 Kullanıcılar uygulama durumu: başkan tablo/kart listesinde kişi, rol, davet/aktiflik durumu ve eklenme tarihini görür; Tümü/Aktif/Davetli/Pasif filtresi ve ad/e-posta araması vardır. Kullanıcı ekleme diyaloğu daveti hemen gönderir; gönderim başarısızsa hesap korunur ve satır menüsünden yeniden denenir. Başkan yap/Üye yap ve pasifleştirme onay ister; sonuç kısa toast ile bildirilir. Kendi satırında işlem menüsü yoktur. Komite üyeliği Komiteler ekranından atanır. Başkan olmayan kullanıcı bu adreste yetkisiz durumu görür.
 
