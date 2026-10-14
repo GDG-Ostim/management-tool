@@ -17,6 +17,9 @@ export async function createAuth(config: Config, db: Database.Database, mailer: 
       enabled: true, disableSignUp: true, minPasswordLength: 12, maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 3600, revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
+        // Inactive accounts get no password link; the public reset answer stays the same either way.
+        const profile = db.prepare('SELECT active FROM user_profiles WHERE user_id = ?').get(user.id) as { active: number } | undefined;
+        if (profile && !profile.active) return;
         const now = new Date().toISOString();
         const invitation = db.prepare('SELECT state FROM invitations WHERE user_id = ?').get(user.id) as { state: string } | undefined;
         const kind = invitation && invitation.state !== 'accepted' ? 'invite' : 'reset';

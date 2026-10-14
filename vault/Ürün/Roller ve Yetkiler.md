@@ -6,6 +6,9 @@ ozet: "Başkan, komite başkanı ve üyenin sunucu taraflı yetki sınırları."
 ---
 # Roller ve Yetkiler
 
+## Uygulama durumu
+Her `/api` isteği `requireMember` ile oturumu ve hesabın aktif + davet kabul edilmiş olmasını veritabanından yeniden okur; başkan uçları ayrıca `requireAdmin` ister. Komite kaynakları `access.ts` içindeki `committeeAccess` üzerinden gelir: görünmeyen veya arşivlenmiş komite üyeye 404, görülen kaynakta yetkisiz işlem 403 döner; `manage` bayrağı başkan veya o komitenin başkanı için açıktır. Roller komite başına çözülür; aynı kişi bir komitede başkan, diğerinde üye olabilir. Rol değişikliği sonraki istekte geçerlidir. Son aktif başkan korunur (`LAST_ADMIN`), kimse kendi rolünü/erişimini değiştiremez (`SELF_UPDATE`). Pasifleştirme oturumları siler; pasif hesaba görev atanmaz, komiteye eklenmez, davet ve şifre bağlantısı gönderilmez (genel şifre yanıtı değişmez). Bu matris `permissions.test.ts`, `auth.test.ts` ve uçtan uca testte doğrulanır.
+
 Başkan ve başkan yardımcısı aynı teknik yetkiyi kullanır: `super_admin`. Arayüz etiketi Başkan. Kurulum yalnız bir ilk başkan yaratır; sonradan aynı yetki başka kullanıcıya verilebilir. Son aktif başkan devre dışı bırakılamaz veya yetkisizleştirilemez.
 
 Komite üyeliği `committee_memberships.role = lead | member`; global normal kullanıcı rolü `user`. Birinin A komitesinde başkan, B'de üye olması mümkündür. Global yönetici rolü komite üyeliği gerektirmez.

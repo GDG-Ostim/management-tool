@@ -52,5 +52,5 @@ export async function startWorkspace(prefix: string, people: string[]) {
     if (!target.startsWith(resolve(tmpdir()) + sep + prefix)) throw new Error('Güvensiz test temizleme yolu');
     await rm(target, { recursive: true, force: true });
   }
-  return { application, request, cookies, ids, stop };
+  return { application, request, cookies, ids, messages, stop };
 }
