@@ -35,4 +35,4 @@ Her teslimde `submitted_at`, `submitted_by`, `due_at_snapshot`, `assignee_id_sna
 ## Veri tutarlılığı
 Durum değişikliği, teslim kaydı ve görevin güncel alanları tek transaction'da yazılır. Görev `version` alanı taşır; istemci eski sürümü gönderirse 409 ve güncel kart geri gelir. Başarısız sürükleme eski konuma döner.
 
-Sütun içi kalıcı elle sıralama MVP'de yoktur; kartlar güncelleme zamanına göre listelenir. Silme yerine yönetici arşivi vardır. Açık arşivlenmiş işler rapor sayımlarından çıkar; tamamlanmış iş arşivlense de geçmiş çıktısı raporda kalır. İptal ayrı bir Kanban sütunu değildir.
+Sütun içi kalıcı elle sıralama MVP'de yoktur; kartlar güncelleme zamanına göre listelenir. Silme yerine yönetici arşivi vardır (`POST /api/tasks/:id/archive`, güncel sürümle; görev penceresinde onaylı Arşivle düğmesi). Arşivlenen görev panodan, düzenlemeden ve detaydan kalkar; bekleyen teslimi geri çekilir. Arşivden çıkarma MVP'de yoktur. Açık arşivlenmiş işler rapor sayımlarından çıkar; tamamlanmış iş arşivlense de geçmiş çıktısı raporda kalır. İptal ayrı bir Kanban sütunu değildir.

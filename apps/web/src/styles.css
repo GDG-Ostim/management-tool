@@ -206,3 +206,4 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 /* Short screens (landscape phones, small windows) keep the account menu reachable. */
 .workspace-sidebar { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }.sidebar-nav { flex: 1 0 auto; }.sidebar-help, .sidebar-footer { flex: 0 0 auto; }
 .activity-card > header a { flex: 0 0 auto; white-space: nowrap; }
+.dialog-form footer .archive-button { margin-right: auto; color: #a50e0e; }.dialog-form footer .archive-button:hover { background: #fce8e6; }

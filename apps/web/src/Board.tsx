@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
-import { CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, Undo2, UsersRound } from 'lucide-react';
+import { Archive, CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, Undo2, UsersRound } from 'lucide-react';
 import { api, ApiError, errorMessage, type Committee, type CommitteeDetail, type Priority, type Task, type TaskStatus } from './api';
 import { Avatar, Badge, Button, Dialog, EmptyState, ScrollFade, Toast, type ToastMessage } from './ui';
 import type { Me } from './Dashboard';
@@ -98,9 +98,9 @@ function toDateInput(value: string | null) {
 // A due date means the end of that local day.
 const fromDateInput = (value: string) => value ? new Date(`${value}T23:59:59`).toISOString() : null;
 
-function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved, refreshed }: {
+function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved, refreshed, archived }: {
   open: boolean; task: Task | null; me: Me; committees: Committee[]; defaultCommittee: string;
-  close(): void; saved(task: Task, created: boolean): void; refreshed(task: Task): void;
+  close(): void; saved(task: Task, created: boolean): void; refreshed(task: Task): void; archived(task: Task): void;
 }) {
   const writable = committees.filter(committee => !committee.archivedAt);
   const [committeeId, setCommitteeId] = useState('');
@@ -144,6 +144,18 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
     } finally { setPending(false); }
   }
 
+  async function archive() {
+    if (!task || !confirm(`“${task.title}” arşivlensin mi? Panodan kalkar; tamamlanmış işse raporlarda kalmaya devam eder.`)) return;
+    setPending(true); setError(null);
+    try {
+      await api(`/api/tasks/${task.id}/archive`, { method: 'POST', body: JSON.stringify({ version: task.version }) });
+      archived(task);
+    } catch (reason) {
+      if (reason instanceof ApiError && reason.code === 'VERSION_CONFLICT' && reason.current) refreshed(reason.current as Task);
+      setError(errorMessage(reason, 'Görev arşivlenemedi.'));
+    } finally { setPending(false); }
+  }
+
   const lockNote = task?.status === 'in_review' ? 'İncelemedeki görev kilitlidir; değiştirmek için teslim geri çekilmeli.'
     : task?.status === 'done' ? 'Tamamlanan görev kilitlidir; düzeltme için komite başkanı yeniden açmalı.'
     : task && !editable ? 'Bu görevi yalnız sorumlusu veya komite başkanı düzenleyebilir.' : null;
@@ -173,7 +185,8 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
     </div>
     {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
     {error && <p className="form-error" role="alert">{error}</p>}
-    <footer><Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
+    <footer>{task && manage && <Button className="archive-button" variant="ghost" onClick={() => void archive()} disabled={pending}><Archive size={16} />Arşivle</Button>}
+      <Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
       {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : 'Görevi oluştur'}</Button>}</footer>
   </form>;
 
@@ -331,7 +344,11 @@ export function Board({ me }: { me: Me }) {
         replace(task); setCreating(false); setEditing(null);
         setToast({ tone: 'success', text: created ? `“${task.title}” oluşturuldu.` : `“${task.title}” güncellendi.` });
       }}
-      refreshed={task => { replace(task); setEditing(task); }} />
+      refreshed={task => { replace(task); setEditing(task); }}
+      archived={task => {
+        setTasks(list => list?.filter(item => item.id !== task.id) ?? list); setEditing(null);
+        setToast({ tone: 'success', text: `“${task.title}” arşivlendi.` });
+      }} />
     <Dialog open={!!reason} title={reason?.kind === 'reopen' ? 'Görevi yeniden aç' : 'Teslimi reddet'}
       description={reason?.kind === 'reopen' ? 'Görev Devam ediyor sütununa döner; tamamlanma kaydı korunur.' : 'Görev sorumluya Devam ediyor olarak döner. Gerekçe inceleme geçmişinde saklanır.'}
       onClose={() => setReason(null)} busy={reasonPending}>
