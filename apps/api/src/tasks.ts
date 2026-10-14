@@ -151,6 +151,23 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
     res.json(view(updated, actor));
   });
 
+  /** Tasks are never deleted: a manager archives them. Archived open work leaves boards and counts; completed work stays in reports. */
+  app.post('/api/tasks/:id/archive', requireMember, (req, res) => {
+    const actor = res.locals.user as Actor;
+    const body = plainObject(req.body, ['version']);
+    const archivedAt = db.transaction(() => {
+      const { row, access } = load(actor, String(req.params.id));
+      if (!access.manage) throw new HttpError(403, 'FORBIDDEN', 'Görevi yalnız komite başkanı arşivleyebilir.');
+      requireVersion(body.version, row, actor);
+      const now = new Date().toISOString();
+      // A pending submission is withdrawn so no review waits on a task nobody can see.
+      db.prepare("UPDATE task_submissions SET resolution = 'withdrawn', resolved_at = ?, resolved_by = ? WHERE task_id = ? AND resolution = 'pending'").run(now, actor.id, row.id);
+      db.prepare('UPDATE tasks SET archived_at = ?, version = version + 1, updated_at = ? WHERE id = ?').run(now, now, row.id);
+      return now;
+    })();
+    res.json({ id: String(req.params.id), archivedAt });
+  });
+
   app.post('/api/tasks/:id/transition', requireMember, (req, res) => {
     const actor = res.locals.user as Actor;
     const body = plainObject(req.body, ['version', 'status', 'reason']);
