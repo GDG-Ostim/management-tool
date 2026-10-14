@@ -3,6 +3,7 @@ import {
   ArrowLeft, ArrowRight, BarChart3, ChevronDown, CircleUserRound, FolderKanban,
   LayoutDashboard, LockKeyhole, LogOut, Menu, Settings2, Sparkles, UsersRound, X,
 } from 'lucide-react';
+import type { MemberProfile } from '@gdg/shared';
 import { authClient } from './auth-client';
 import { Avatar, Button, Card, EmptyState } from './ui';
 import { Overview, Profile, Reports } from './Reports';
@@ -10,7 +11,7 @@ import { Users } from './Users';
 import { Board } from './Board';
 import { Committees } from './Committees';
 
-type Me = { id: string; name: string; email: string; role: 'super_admin' | 'user'; onboardingCompletedAt: string | null; leadsCommittee: boolean };
+type Me = MemberProfile;
 type Icon = ComponentType<{ size?: number; strokeWidth?: number }>;
 /** `reports` items are for the president and committee leads; `admin` items only for the president. */
 type NavItem = { href: string; label: string; icon: Icon; access?: 'reports' | 'admin' };

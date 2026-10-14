@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import { resolve } from 'node:path';
+import type { ApiFailure, MemberProfile } from '@gdg/shared';
 import type { Config } from './config.js';
 import { openDatabase, canSignIn } from './database.js';
 import { createAuth } from './auth.js';
@@ -75,7 +76,7 @@ export async function createApplication(config: Config, mailer: Mailer = createM
       .get(id) as { onboardingCompletedAt: string | null };
     const leads = db.prepare(`SELECT 1 FROM committee_memberships m JOIN committees c ON c.id = m.committee_id
       WHERE m.user_id = ? AND m.role = 'lead' AND c.archived_at IS NULL`).get(id);
-    res.json({ id, name, email, role, onboardingCompletedAt: profile.onboardingCompletedAt, leadsCommittee: !!leads });
+    res.json({ id, name, email, role, onboardingCompletedAt: profile.onboardingCompletedAt, leadsCommittee: !!leads } satisfies MemberProfile);
   });
   app.patch('/api/me/onboarding', requireMember, (req, res) => {
     const body = req.body as unknown;
@@ -145,7 +146,7 @@ export async function createApplication(config: Config, mailer: Mailer = createM
     app.get('/{*splat}', (_req, res) => res.sendFile(resolve('apps/web/dist/index.html')));
   }
   const handleError: ErrorRequestHandler = (error, _req, res, _next) => {
-    if (error instanceof HttpError) { res.status(error.status).json({ error: { code: error.code, message: error.message }, ...(error.current ? { current: error.current } : {}) }); return; }
+    if (error instanceof HttpError) { res.status(error.status).json({ error: { code: error.code, message: error.message }, ...(error.current ? { current: error.current } : {}) } satisfies ApiFailure); return; }
     if (error.type === 'entity.too.large' || error instanceof SyntaxError) { res.status(400).json({ error: { code: 'INVALID_BODY', message: 'İstek içeriği geçersiz.' } }); return; }
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'İşlem tamamlanamadı.' } });
   };

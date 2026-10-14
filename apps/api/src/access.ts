@@ -1,7 +1,8 @@
 import type Database from 'better-sqlite3';
+import type { CommitteeRole } from '@gdg/shared';
 import { HttpError } from './errors.js';
 
-export type CommitteeRole = 'lead' | 'member';
+export type { CommitteeRole };
 export interface Actor { id: string; role?: string | null }
 
 export const isAdmin = (actor: Actor) => actor.role === 'super_admin';

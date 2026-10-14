@@ -1,5 +1,6 @@
 import type { Express, RequestHandler } from 'express';
 import type Database from 'better-sqlite3';
+import type { Summary, Timing } from '@gdg/shared';
 import { committeeAccess, isAdmin, type Actor } from './access.js';
 import { HttpError } from './errors.js';
 
@@ -9,8 +10,6 @@ type Row = {
   approvedSubmittedAt: string | null; approvedDue: string | null; approvedAssigneeId: string | null; approvedAssigneeName: string | null;
   pendingSubmittedAt: string | null; pendingDue: string | null; rejections: number; reopens: number; links: string;
 };
-export type Timing = 'on_time' | 'late' | 'undated' | 'overdue' | null;
-export interface Summary { completed: number; onTime: number; late: number; undated: number; openOverdue: number; overdueTotal: number; inReview: number; open: number }
 
 const emptySummary = (): Summary => ({ completed: 0, onTime: 0, late: 0, undated: 0, openOverdue: 0, overdueTotal: 0, inReview: 0, open: 0 });
 
