@@ -5,6 +5,7 @@ export interface Config {
   secret: string;
   databasePath: string;
   port: number;
+  host: string;
   production: boolean;
   resendKey?: string;
   mailFrom?: string;
@@ -20,5 +21,7 @@ export function loadConfig(env = process.env): Config {
   if (production && (!env.RESEND_API_KEY || !env.MAIL_FROM)) throw new Error('Üretimde RESEND_API_KEY ve MAIL_FROM gerekli.');
   const port = Number(env.PORT ?? 3000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Geçersiz PORT.');
-  return { appUrl, secret: env.BETTER_AUTH_SECRET, databasePath: resolve(env.DATABASE_PATH ?? 'data/gdg.sqlite'), port, production, resendKey: env.RESEND_API_KEY, mailFrom: env.MAIL_FROM };
+  // Containers listen on all interfaces; local runs stay on loopback.
+  const host = env.HOST ?? '127.0.0.1';
+  return { appUrl, secret: env.BETTER_AUTH_SECRET, databasePath: resolve(env.DATABASE_PATH ?? 'data/gdg.sqlite'), port, host, production, resendKey: env.RESEND_API_KEY, mailFrom: env.MAIL_FROM };
 }

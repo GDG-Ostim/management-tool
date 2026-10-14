@@ -22,7 +22,7 @@ export async function startWorkspace(prefix: string, people: string[]) {
   await writeFile(passwordFile, 'Guclu-Baslangic-Sifresi-123!');
   const port = await freePort(); const origin = `http://127.0.0.1:${port}`;
   const messages: PasswordMail[] = [];
-  const application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, production: false },
+  const application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, host: '127.0.0.1', production: false },
     { async sendPasswordLink(message) { messages.push(message); } });
   const server = application.app.listen(port, '127.0.0.1');
   await new Promise<void>((done, fail) => { server.once('listening', done); server.once('error', fail); });

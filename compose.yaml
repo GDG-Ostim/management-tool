@@ -1,0 +1,33 @@
+# Single service behind your HTTPS reverse proxy. Values come from .env (see .env.example);
+# the first president's password is read once from the Docker secret below.
+services:
+  app:
+    build: .
+    image: gdg-management-tool:local
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_PATH: /data/gdg.sqlite
+      BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/bootstrap_admin_password
+    # Only the reverse proxy on this host should reach the app.
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - gdg-data:/data
+    secrets:
+      - bootstrap_admin_password
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  gdg-data:
+
+secrets:
+  bootstrap_admin_password:
+    file: ${BOOTSTRAP_SECRET_FILE:-./secrets/bootstrap-password.txt}

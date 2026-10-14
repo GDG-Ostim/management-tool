@@ -16,7 +16,7 @@ await writeFile(passwordFile, admin.password);
 
 const mails = new Map<string, string>();
 const application = await createApplication(
-  { appUrl: origin, secret: 'e2e-secret-that-is-at-least-32-characters', databasePath: join(directory, 'e2e.sqlite'), port, production: false },
+  { appUrl: origin, secret: 'e2e-secret-that-is-at-least-32-characters', databasePath: join(directory, 'e2e.sqlite'), port, host: '127.0.0.1', production: false },
   { async sendPasswordLink(message) { mails.set(message.email.toLowerCase(), message.url); } },
 );
 await bootstrap(application.auth, application.db, { email: admin.email, name: admin.name, passwordFile });

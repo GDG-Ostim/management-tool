@@ -6,7 +6,7 @@ ozet: "Docker, veri sürekliliği ve MVP kapanış akışı."
 ---
 # Çalıştırma ve Teslim
 
-Bu not uygulama issue'sunun planıdır; bugün çalışan Docker image veya uygulama yoktur.
+Uygulama durumu: `Dockerfile` (çok aşamalı, `node:22-bookworm-slim`, `node` kullanıcısı, healthcheck) ve `compose.yaml` (tek servis, `127.0.0.1:3000`, `gdg-data` volume, salt okunur kök dosya sistemi, ilk başkan şifresi Docker secret) hazırdır. Üretim girişi `apps/api/src/start.ts`: mevcut veritabanının başlangıç yedeği → migration → boş kurulumda tek seferlik bootstrap → sunucu. Yedek/geri yükleme `maintenance.ts` ve `backup-cli`/`restore-cli` ile yapılır; adımlar README'dedir. CI'daki `scripts/docker-smoke.sh` derleme, ilk açılış, yeniden başlatma, canlı yedek ve servis durdurularak geri yüklemeyi her PR'da dener.
 
 ## Tek sunucu
 Çok aşamalı Docker build: React build + TypeScript API build → tek runtime. Native better-sqlite3 modülü runtime OS/Node ABI'siyle uyumlu üretilir. Tek replica; SQLite dosyası `/data` persistent volume'ünde. Reverse proxy HTTPS sağlar; yalnız uygulama portu iç ağda. Container root olmadan çalışır.
