@@ -29,3 +29,5 @@ Hızlı geliştirme için seçilen ve kullanıcı tarafından ayrıca tek tek be
 
 ## Bitmiş ürün
 Beş fazın 20 issue'su kapandığında, başkanın kullanıcı davetinden üyenin teslimine ve başkan onayının rapora yansımasına kadar akış çalışır. Bu zinciri bozan entegrasyon hataları son teslim issue'sunda çözülür; ek ürün özelliği açılmaz.
+
+Durum (2026-10-14): Yukarıdaki "Yapılacak" maddelerinin hepsi uygulandı. Zincir `e2e/mvp.spec.ts` ile tarayıcıda, kurallar `apps/api/test` altında, Docker çalıştırma/yedek/geri yükleme CI duman testiyle doğrulanır. Canlı sunucuya otomatik dağıtım (CD) sunucu hedefi seçilene kadar kapsam dışıdır; bkz. [[Operasyon/CI CD]].

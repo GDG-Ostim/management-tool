@@ -12,8 +12,11 @@ Her pull request ve `main` push'unda tek, tekrar üretilebilir doğrulama hattı
 1. Node.js 22 ve kilit dosyasıyla `npm ci`.
 2. Vault bağlantı ve indeks kontrolü.
 3. Tooling ve API entegrasyon testleri.
-4. TypeScript kontrolü ile API ve web production build'i.
-5. Production bağımlılıklarında yüksek/kritik npm güvenlik denetimi.
+4. Playwright/Chromium ile uçtan uca akış (`npm run test:e2e`); hata olursa rapor artifact olarak yüklenir.
+5. TypeScript kontrolü ile API ve web production build'i.
+6. Production bağımlılıklarında yüksek/kritik npm güvenlik denetimi.
+
+Ayrı `Docker smoke` job'u imajı derler, Compose ile başlatır; giriş, yeniden başlatmada veri sürekliliği, canlı yedek ve servis durdurularak geri yüklemeyi `scripts/docker-smoke.sh` ile dener.
 
 Workflow action'ları Node.js 24 runtime kullanan güncel major sürümlerdedir. Uygulamanın test/build matrisi ise `package.json` ile uyumlu Node.js 22 üzerinde çalışır.
 
@@ -22,10 +25,10 @@ Yeni commit aynı branch'teki eski çalışmayı iptal eder. Süre sınırı tak
 `Vault` workflow'u yalnız doküman, bağlam scripti veya ortak çalışma kuralı değiştiğinde hızlı geri bildirim verir. Ana CI Vault'u ayrıca kontrol ettiği için merge güvenliği tek bir zorunlu `CI / Validate` durumuna bağlanabilir.
 
 ## Branch kuralı
-CI ilk kez başarıyla çalıştıktan sonra `main` için pull request ve güncel `CI / Validate` kontrolü zorunlu kılınır. İki kişilik hızlı geliştirme akışında zorunlu onay sayısı sıfır tutulur; inceleme istenirse PR bazında yapılır. Force push ve branch silme kapalı tutulur.
+CI ilk kez başarıyla çalıştıktan sonra `main` için pull request ve güncel `CI / Validate` kontrolü zorunlu kılınır. Tek geliştiricili akışta zorunlu onay sayısı sıfır tutulur; CI yeşil olan PR doğrudan merge edilir; inceleme istenirse PR bazında yapılır. Force push ve branch silme kapalı tutulur.
 
 ## CD sınırı
-Henüz production hedefi ve Docker image'ı yoktur; bu nedenle CI canlı ortama otomatik gönderim yapmaz. [[Operasyon/Çalıştırma ve Teslim]] ile #19 tamamlandığında ayrı CD hattı eklenir:
+Docker imajı ve Compose kurulumu hazırdır ([[Operasyon/Çalıştırma ve Teslim]]); production sunucu hedefi henüz seçilmediği için CI canlı ortama otomatik gönderim yapmaz. Hedef seçildiğinde ayrı CD hattı eklenir:
 
 1. Sürüm etiketi immutable OCI image üretir; image commit SHA ve sürüm etiketi taşır.
 2. Image taraması geçince digest ile GHCR'a yayınlanır.
@@ -33,4 +36,4 @@ Henüz production hedefi ve Docker image'ı yoktur; bu nedenle CI canlı ortama 
 4. Migration öncesi SQLite backup alınır; deploy sonrası healthcheck çalışır.
 5. Healthcheck başarısızsa önceki image digest'ine dönülür; veri geri yükleme ayrı ve açık bir operatör işlemidir.
 
-Deployment anahtarları repo veya artifact içine girmez. Resend ve Better Auth sırları yalnız environment secret olarak sağlanır. Canlı dağıtımın gerçek komutları, sunucu hedefi seçildiğinde #19 içinde yazılıp duman testiyle doğrulanır.
+Deployment anahtarları repo veya artifact içine girmez. Resend ve Better Auth sırları yalnız environment secret olarak sağlanır. Canlı dağıtımın gerçek komutları sunucu hedefi seçildiğinde yeni bir issue ile yazılır ve mevcut duman testiyle doğrulanır.

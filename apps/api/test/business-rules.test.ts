@@ -1,5 +1,6 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { boardLimits } from '../src/tasks.js';
 import { startWorkspace } from './helpers.js';
 
 const hours = (value: number) => new Date(Date.now() + value * 3_600_000).toISOString();
@@ -73,6 +74,27 @@ describe('kritik iş kuralları', () => {
     const overview = (await request('/api/reports/overview', cookies.admin)).body.summary;
     const done = ws.application.db.prepare("SELECT count(*) AS count FROM tasks WHERE status = 'done' AND archived_at IS NULL").get() as { count: number };
     assert.equal(overview.completed, done.count);
+  });
+
+  test('eski tamamlanmış işler açık görevleri panodan düşürmez', async () => {
+    const { request, cookies, application, ids } = ws;
+    const stale = (await request('/api/tasks', cookies.member, 'POST', { committeeId: committee, title: 'Unutulan açık iş' })).body;
+    application.db.prepare('UPDATE tasks SET updated_at = ? WHERE id = ?').run('2020-01-01T00:00:00.000Z', stale.id);
+    const insert = application.db.prepare(`INSERT INTO tasks (id, committee_id, title, assignee_id, created_by, status, created_at, updated_at, completed_at)
+      VALUES (?, ?, ?, ?, ?, 'done', ?, ?, ?)`);
+    application.db.transaction(() => {
+      // More than the old single 500-row cap, which hid the stale open task behind newer completions.
+      for (let index = 0; index < 501; index++) {
+        const at = new Date(Date.now() - index * 60_000).toISOString();
+        insert.run(`bulk-${index}`, committee, `Biten ${index}`, ids.member, ids.lead, at, at, at);
+      }
+    })();
+    const board = (await request(`/api/tasks?committeeId=${committee}`, cookies.member)).body as Array<{ id: string; status: string }>;
+    assert.ok(board.some(task => task.id === stale.id));
+    const done = board.filter(task => task.status === 'done');
+    assert.equal(done.length, boardLimits.done);
+    assert.ok(done.some(task => task.id === 'bulk-0'));
+    assert.equal(done.some(task => task.id === `bulk-${boardLimits.done}`), false);
   });
 
   test('Better Auth yönetim uçları dışarı kapalıdır; yetkisi alınan başkan aynı oturumla yönetemez', async () => {
