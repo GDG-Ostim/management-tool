@@ -43,7 +43,7 @@ describe('komite ve görev akışı', () => {
     const passwordFile = join(directory, 'password.txt');
     await writeFile(passwordFile, 'Guclu-Baslangic-Sifresi-123!');
     const port = await freePort(); origin = `http://127.0.0.1:${port}`;
-    application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'work.sqlite'), port, production: false },
+    application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'work.sqlite'), port, host: '127.0.0.1', production: false },
       { async sendPasswordLink(message) { messages.push(message); } });
     server = application.app.listen(port, '127.0.0.1');
     await new Promise<void>((done, fail) => { server.once('listening', done); server.once('error', fail); });

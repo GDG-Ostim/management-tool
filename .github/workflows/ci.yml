@@ -73,3 +73,14 @@ jobs:
             .env.example
           if-no-files-found: error
           retention-days: 14
+
+  docker:
+    name: Docker smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build, start, restart, back up and restore
+        run: bash scripts/docker-smoke.sh

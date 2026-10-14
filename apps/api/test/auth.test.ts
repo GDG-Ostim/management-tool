@@ -36,7 +36,7 @@ describe('kapalı kayıt ve davet akışı', () => {
     passwordFile = join(directory, 'password.txt');
     await writeFile(passwordFile, admin.password);
     const port = await freePort(); origin = `http://127.0.0.1:${port}`;
-    const config: Config = { appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, production: false };
+    const config: Config = { appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, host: '127.0.0.1', production: false };
     application = await createApplication(config, { async sendPasswordLink(message) { if (failMail) throw new Error('test mail failure'); messages.push(message); } });
     server = application.app.listen(port, '127.0.0.1');
     await new Promise<void>((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
