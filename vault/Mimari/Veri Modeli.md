@@ -6,7 +6,7 @@ ozet: "Minimal SQLite tabloları ve geçmişi koruyan ilişkiler."
 ---
 # Veri Modeli
 
-Bu şema uygulama sözleşmesidir. `001-identity` ve `002-committees-tasks` migration'ları user_profiles, invitations, committees, committee_memberships, tasks, task_submissions ve task_reopens tablolarını; `003-task-details` task_comments, task_checklist_items, task_links, labels ve task_labels tablolarını kurdu. ID'ler opaque string; tüm tarihler UTC. Bir task tam bir komiteye aittir; tenant/organization tablosu gerekmez.
+Bu şema uygulama sözleşmesidir. Migration'lar `apps/api/src/database.ts` içindeki sıralı listedir: açılışta önce Better Auth kendi tablolarını kurar, ardından `migrate()` `schema_migrations` içinde kaydı olmayan sürümleri sırayla, her birini kendi transaction'ında bir kez uygular. Uygulanmış migration değiştirilmez; değişiklik yeni sürümle eklenir. `004-integrity` teslim geçmişi/etiket indekslerini ve şu tetikleyicileri ekler: onaylanan veya yeniden açılan teslim aynı göreve ait olmalı; tamamlanmış görev silinemez (arşivlenir). `001-identity` ve `002-committees-tasks` migration'ları user_profiles, invitations, committees, committee_memberships, tasks, task_submissions ve task_reopens tablolarını; `003-task-details` task_comments, task_checklist_items, task_links, labels ve task_labels tablolarını kurdu. ID'ler opaque string; tüm tarihler UTC. Bir task tam bir komiteye aittir; tenant/organization tablosu gerekmez.
 
 | Tablo | Ana alanlar |
 | --- | --- |
