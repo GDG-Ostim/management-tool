@@ -52,8 +52,10 @@ cookie=$(sign_in); test -n "$cookie"
 committees "$cookie" | grep -q '"name":"Etkinlik"'
 # Bootstrap ran once: still exactly one president, and this start did not create another.
 test "$(curl -sf "$base/api/users" -H "Cookie: $cookie" | grep -o '"role":"super_admin"' | wc -l)" = 1
-if compose logs app | tail -n 5 | grep -q 'İlk başkan oluşturuldu'; then echo 'Bootstrap ran again on restart'; exit 1; fi
-compose logs app | grep -q 'Başlangıç yedeği alındı'
+# Only the lines of the latest start (from its startup backup on) count.
+latest=$(compose logs --no-log-prefix app | awk '/Başlangıç yedeği alındı/ { start = NR } { line[NR] = $0 } END { for (i = start; i <= NR; i++) print line[i] }')
+echo "$latest" | grep -q 'Başlangıç yedeği alındı'
+if echo "$latest" | grep -q 'İlk başkan oluşturuldu'; then echo 'Bootstrap ran again on restart'; exit 1; fi
 
 step 'Online backup, change, restore'
 backup=$(compose exec -T app node apps/api/dist/backup-cli.js | tr -d '\r' | tail -1)
