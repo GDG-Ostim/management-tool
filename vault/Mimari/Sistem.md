@@ -8,7 +8,7 @@ ozet: "React ve Express tek servis mimarisi, API alanları ve geliştirme sını
 
 ## Yığın
 Kullanıcı seçimi: React, Express.js, Better Auth, SQLite. “Better SQLite” ifadesi `better-sqlite3` Node sürücüsü olarak uygulanır.
-Uygulama tercihleri: TypeScript, React + Vite SPA, Express 5, shadcn/ui; tek repo, tek Node servisi, tek SQLite dosyası. npm workspaces ile `apps/web`, `apps/api`, `packages/shared`. Bunlar henüz oluşturulmadı; ilk issue kuracak.
+Uygulama tercihleri: TypeScript, React + Vite SPA, Express 5, shadcn/ui; tek repo, tek Node servisi, tek SQLite dosyası. npm workspaces ile `apps/web`, `apps/api`, `packages/shared`. `packages/shared` yalnız tip paketidir: roller, görev durumu, öncelik, rapor özeti/zamanlaması, `/api/me` profili ve hata gövdesi. İki uygulama bunları `import type` ile alır; tipler derlemede silindiği için paket çalışma zamanında yüklenmez. Komutlar: `npm run dev` (API `--watch` + Vite), `npm run typecheck`, `npm test`, `npm run test:e2e`, `npm run build`.
 
 ORM, mesaj kuyruğu, Redis, mikroservis ve websocket eklenmez. SQL prepared statement + küçük repository/service katmanları ve sıralı migration dosyaları yeterli. Better Auth şeması kendi migration aracıyla yönetilir; uygulama tabloları ayrı tutulur.
 

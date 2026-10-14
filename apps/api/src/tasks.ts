@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { Express, RequestHandler } from 'express';
 import type Database from 'better-sqlite3';
+import type { Priority, TaskStatus } from '@gdg/shared';
 import { committeeAccess, isActiveMember, isAdmin, plainObject, type Actor } from './access.js';
 import { HttpError } from './errors.js';
 
-export const statuses = ['todo', 'in_progress', 'in_review', 'done'] as const;
-export type TaskStatus = typeof statuses[number];
-const priorities = ['low', 'normal', 'high'] as const;
+export const statuses: readonly TaskStatus[] = ['todo', 'in_progress', 'in_review', 'done'];
+const priorities: readonly Priority[] = ['low', 'normal', 'high'];
 
 type TaskRow = {
   id: string; committeeId: string; committeeName: string; title: string; description: string;

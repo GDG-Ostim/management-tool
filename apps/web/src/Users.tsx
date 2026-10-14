@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { MailCheck, MoreHorizontal, RefreshCw, Search, ShieldCheck, ShieldOff, UserCheck, UserPlus, UserX, UsersRound } from 'lucide-react';
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, Field, Toast, type ToastMessage } from './ui';
+import type { InvitationState } from '@gdg/shared';
 import type { Me } from './Dashboard';
 import { api } from './api';
 
-type Invitation = 'pending' | 'sent' | 'failed' | 'accepted';
+type Invitation = InvitationState;
 type User = { id: string; name: string; email: string; role: Me['role']; active: boolean; invitation: Invitation; invitationSentAt: string | null; createdAt: string };
 type Filter = 'all' | 'active' | 'invited' | 'inactive';
 type Pending = { user: User; change: { role: Me['role'] } | { active: boolean } } | null;

@@ -12,7 +12,7 @@ ozet: "Yeni oturum için kısa bağlam ve mevcut geliştirme durumu."
 - Başkan global; komite başkanı komiteye bağlı; üye yalnız kendi görevini değiştirir. Üye kendi komitesinin bütün işlerini okur.
 - İnceleme onaylı tamamlama; rapor teslim zamanına dayanır. Ayrı audit ekranı yok.
 - MVP dışı: multi-tenant, açık kayıt, upload, mention, bildirim, timeline.
-- Poyraz ve Türker 10'ar issue; görsel üretimi yalnız Poyraz.
+- Tek geliştirici: bütün issue'lar Poyraz'da (2026-10-14'ten beri; Türker projede yer almıyor).
 - Önce çalışılan issue'yu ve ilgili rota notlarını oku. Tüm vault/asset/oturum geçmişini yükleme.
 - Kullanıcı kararı ile uygulama tercihini ayır. Değişen nottan sonra index/check; committe AI ortak yazar yok.
 - Rotalar: `node scripts/context.mjs auth|permissions|tasks|reports|ui|ops`.
