@@ -15,10 +15,10 @@ function bare() {
 describe('veri modeli ve migration sırası', () => {
   test("migration'lar sırayla bir kez uygulanır ve kaydedilir", () => {
     const db = bare();
-    assert.deepEqual(migrate(db), ['001-identity', '002-committees-tasks', '003-task-details', '004-integrity', '005-web-push']);
+    assert.deepEqual(migrate(db), ['001-identity', '002-committees-tasks', '003-task-details', '004-integrity', '005-web-push', '006-deadline-reminders']);
     assert.deepEqual(migrate(db), []);
     const versions = (db.prepare('SELECT version FROM schema_migrations ORDER BY version').all() as Array<{ version: string }>).map(row => row.version);
-    assert.deepEqual(versions, ['001-identity', '002-committees-tasks', '003-task-details', '004-integrity', '005-web-push']);
+    assert.deepEqual(versions, ['001-identity', '002-committees-tasks', '003-task-details', '004-integrity', '005-web-push', '006-deadline-reminders']);
     db.close();
   });
 

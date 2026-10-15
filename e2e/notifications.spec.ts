@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { admin } from './accounts';
 
 test('bildirim ekranı kullanıcı tıklamasıyla izin ister, tercihleri kaydeder ve cihazı kapatır', async ({ page }) => {
-  const preferences = { enabled: false, assignment: true, review: true, decision: true };
+  const preferences = { enabled: false, assignment: true, review: true, decision: true, reminder: true };
   const publicKey = 'B' + 'A'.repeat(86); // Browser API is stubbed; no provider subscription or real notification is sent.
   let registered = false;
   let queued = false;
@@ -56,6 +56,8 @@ test('bildirim ekranı kullanıcı tıklamasıyla izin ister, tercihleri kaydede
   await page.getByLabel('Bana görev atandığında', { exact: true }).uncheck();
   await expect(page.getByLabel('Bana görev atandığında', { exact: true })).not.toBeChecked();
   expect(preferences.assignment).toBe(false);
+  await page.getByLabel('Görevimin son tarihine 24 saat kala', { exact: true }).uncheck();
+  await expect.poll(() => preferences.reminder).toBe(false);
   await page.getByRole('button', { name: 'Test bildirimi gönder', exact: true }).click();
   await expect(page.getByText('Test bildirimi gönderim kuyruğuna eklendi.', { exact: true })).toBeVisible();
   expect(queued).toBe(true);

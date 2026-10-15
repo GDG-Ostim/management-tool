@@ -14,12 +14,18 @@ function notificationUrl(value) {
   return new URL('/profilim', self.location.origin).href;
 }
 
+// Fixed lock-screen texts; anything else from a payload is replaced by the generic line.
+const MESSAGES = new Set([
+  'Bu cihazda bildirimler çalışıyor.', 'Sana yeni bir görev atandı.', 'İncelemeni bekleyen bir teslim var.',
+  'Görevin onaylandı.', 'Görevin düzeltme için sana geri döndü.', 'Bir görevinin son tarihi yaklaşıyor.',
+]);
+
 self.addEventListener('push', event => {
   event.waitUntil((async () => {
     let data = {};
     try { data = event.data?.json() ?? {}; } catch { /* A generic notification is still useful. */ }
     await self.registration.showNotification('GDG OSTİM', {
-      body: data.body === 'Bu cihazda bildirimler çalışıyor.' ? data.body : 'Çalışma alanında bir güncelleme var.',
+      body: MESSAGES.has(data.body) ? data.body : 'Çalışma alanında bir güncelleme var.',
       icon: '/icons/icon-192.png',
       tag: typeof data.tag === 'string' ? data.tag.slice(0, 200) : 'gdg-update',
       data: { url: notificationUrl(data.url) },

@@ -60,7 +60,7 @@ export function NotificationCard() {
   }
   const active = subscribed && settings?.preferences.enabled && permission === 'granted' && settings?.configured;
   return <Card className="notification-card">
-    <header><h2><Bell size={18} />Bildirimler</h2><p>Görev atamaları ve inceleme sonuçları için cihaz bildirimlerini yönet.</p></header>
+    <header><h2><Bell size={18} />Bildirimler</h2><p>Görev atamaları, incelemeler, kararlar ve yaklaşan son tarihler için cihaz bildirimlerini yönet.</p></header>
     {!settings ? <p>{error ? 'Ayarlar yüklenemedi.' : 'Ayarlar yükleniyor…'}</p> : <>
       {!settings.configured ? <p className="form-note">Bildirimler sunucuda henüz etkinleştirilmedi. Etkinleştirildiğinde buradan izin verebilirsin.</p>
         : !supportsPush() ? <p className="form-note">Bu tarayıcıda bildirim desteği yok. iPhone veya iPad kullanıyorsan uygulamayı ana ekrana ekleyip oradan aç.</p>
@@ -78,7 +78,7 @@ export function NotificationCard() {
       </div>
       <fieldset disabled={busy || !settings.configured}>
         <legend>Hesabındaki tüm cihazlar</legend>
-        {([['enabled', 'Bildirimleri al'], ['assignment', 'Bana görev atandığında'], ['review', 'Yönettiğim komitede inceleme beklendiğinde'], ['decision', 'Görevim onaylandığında, düzeltme istendiğinde veya yeniden açıldığında']] as const).map(([key, label]) =>
+        {([['enabled', 'Bildirimleri al'], ['assignment', 'Bana görev atandığında'], ['review', 'Yönettiğim komitede inceleme beklendiğinde'], ['decision', 'Görevim onaylandığında, düzeltme istendiğinde veya yeniden açıldığında'], ['reminder', 'Görevimin son tarihine 24 saat kala']] as const).map(([key, label]) =>
           <label key={key}><input type="checkbox" checked={settings.preferences[key]} onChange={event => void run(() => save({ [key]: event.target.checked }))} />{label}</label>)}
       </fieldset>
       <small>Bildirim içeriğinde kişi, görev başlığı veya yorum gösterilmez. Çıkış yaptığında bu cihazın bağlantısı kesilir.</small>

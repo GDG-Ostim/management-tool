@@ -107,7 +107,7 @@
   {
     "path": "vault/Ürün/PWA ve Bildirimler.md",
     "alan": "ui",
-    "ozet": "Kurulabilir PWA temeli, güvenli çevrimdışı davranış ve fazlı Web Push planı."
+    "ozet": "Kurulabilir PWA, Web Push görev bildirimleri, son tarih hatırlatması ve güvenlik sınırları."
   },
   {
     "path": "vault/Ürün/Raporlar.md",

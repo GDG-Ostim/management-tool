@@ -139,6 +139,11 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 @media (hover: none) { .scroll-fade-button { display: none; } }
 .board.scroll-fade-viewport { padding-bottom: 10px; }
 .row-menu-popover.opens-up { top: auto; bottom: calc(100% + 4px); }
+.setup-hint { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 14px 14px 14px 16px; border: 1px solid #d2e3fc; border-radius: 12px; background: #f4f8fe; }
+.setup-hint-icon { display: grid; flex: 0 0 auto; width: 40px; height: 40px; place-items: center; border-radius: 10px; color: #174ea6; background: #e8f0fe; }
+.setup-hint > div { flex: 1; min-width: 0; }.setup-hint strong { font-size: 14px; }.setup-hint p { margin: 3px 0 0; color: #5f6368; font-size: 13px; line-height: 1.5; }
+.setup-hint-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
+@media (max-width: 760px) { .setup-hint { flex-wrap: wrap; }.setup-hint > div { flex-basis: calc(100% - 54px); }.setup-hint-actions { width: 100%; }.setup-hint-actions .ui-button.is-primary { flex: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes mascot-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @media (max-height: 680px) and (min-width: 761px) { .sidebar-nav { margin-top: 18px; }.sidebar-help { min-height: 0; padding-right: 14px; }.sidebar-help img { display: none; } }

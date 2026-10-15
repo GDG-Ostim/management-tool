@@ -21,6 +21,7 @@
     "typecheck": "tsc -p apps/api/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
     "start": "node --env-file-if-exists=.env apps/api/dist/start.js",
     "backup": "node --env-file-if-exists=.env --import tsx apps/api/src/backup-cli.ts",
+    "push:keys": "node scripts/push-keys.mjs",
     "restore": "node --env-file-if-exists=.env --import tsx apps/api/src/restore-cli.ts",
     "test": "npm run test:tooling && npm run test -w @gdg/api",
     "test:e2e": "npm run build -w @gdg/web && playwright test -c e2e/playwright.config.ts"

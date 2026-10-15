@@ -28,7 +28,7 @@ Yeni commit aynı branch'teki eski çalışmayı iptal eder. Süre sınırı tak
 CI ilk kez başarıyla çalıştıktan sonra `main` için pull request ve güncel `CI / Validate` kontrolü zorunlu kılınır. Tek geliştiricili akışta zorunlu onay sayısı sıfır tutulur; CI yeşil olan PR doğrudan merge edilir; inceleme istenirse PR bazında yapılır. Force push ve branch silme kapalı tutulur.
 
 ## CD sınırı
-Kullanıcı 15 Ekim 2026 tarihinde uygulamanın yayında olduğunu bildirdi. Mevcut reponun CI hattında otomatik canlı dağıtım yoktur; canlı adres, sunucu ve mevcut dağıtım yöntemi bu oturumda doğrulanamadı. Kullanıcının son yönlendirmesi önce güncellemeyi tamamlamaktır. Bu revizyon için deploy henüz yapılmadı. Docker imajı ve Compose kurulumu hazırdır ([[Operasyon/Çalıştırma ve Teslim]]); hedef netleşince aşağıdaki CD planı mevcut hosting akışına uyarlanır:
+Canlı kurulum: `https://manage.gdgostimtech.com`, VeriTeknik `video-sunucu` üzerinde nginx (Let's Encrypt) → `127.0.0.1:3000` → `/opt/gdg-manage` içindeki Compose servisi. CI canlıya otomatik göndermez; dağıtım elle yapılır: sunucuda `git pull --ff-only` ardından `docker compose up -d --build`. Her açılış önce başlangıç yedeği alır. Sırlar yalnız sunucudaki `.env` ve `secrets/` içindedir. Otomatik CD istenirse aşağıdaki plan bu kuruluma uyarlanır ([[Operasyon/Çalıştırma ve Teslim]]):
 
 1. Sürüm etiketi immutable OCI image üretir; image commit SHA ve sürüm etiketi taşır.
 2. Image taraması geçince digest ile GHCR'a yayınlanır.

@@ -1,5 +1,6 @@
 import { EmailLink } from './EmailLink';
 import { InstallCard } from './InstallCard';
+import { AppSetupHint } from './AppSetupHint';
 import { NotificationCard } from './NotificationCard';
 import { useState, type FormEvent } from 'react';
 import { ArrowLeft, BarChart3, KeyRound, UsersRound } from 'lucide-react';
@@ -38,6 +39,7 @@ export function Overview({ me }: { me: Me }) {
   return <>
     <div className="page-title-row"><div><h1>Genel Bakış</h1><p>Hoş geldin, {me.name}. {admin ? 'Topluluğun güncel çalışma durumunu burada görebilirsin.' : 'Sana atanan işlerin güncel durumunu burada görebilirsin.'}</p></div>
       <Button variant="primary" onClick={() => location.assign('/panolar')}>Panolara git</Button></div>
+    <AppSetupHint />
     {(admin ? overall.error : personal.error) ? <LoadError error={(admin ? overall.error : personal.error)!} retry={admin ? overall.retry : personal.retry} />
       : <SummaryCards summary={summary} />}
     {admin && overall.data && <p className="report-meta">{overall.data.committeeCount} aktif komite · {overall.data.memberCount} aktif üye · Sayaçlar bütün komiteleri kapsar.</p>}

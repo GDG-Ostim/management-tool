@@ -2,7 +2,7 @@
 tur: urun
 alan: ui
 guncelleme: 2026-10-15
-ozet: "Kurulabilir PWA temeli, güvenli çevrimdışı davranış ve fazlı Web Push planı."
+ozet: "Kurulabilir PWA, Web Push görev bildirimleri, son tarih hatırlatması ve güvenlik sınırları."
 ---
 # PWA ve Bildirimler
 
@@ -10,9 +10,16 @@ ozet: "Kurulabilir PWA temeli, güvenli çevrimdışı davranış ve fazlı Web 
 
 ## Uygulama durumu
 
-Faz 1 kodu hazır: `manifest.webmanifest`, mevcut dört renkli marka işaretinden 192/512 px simgeler ve 180 px Apple simgesi, production service worker kaydı, Türkçe çevrimdışı ekran ve Profilim'de kurulum kartı. Destekleyen tarayıcı yükleme düğmesini, diğerleri platforma göre yönergeyi görür. PWA internetle çalışan bir uygulamadır; çevrimdışı görev okuma/düzenleme ve otomatik yeniden gönderim yoktur. Push aboneliği, bildirim gönderimi ve bildirim tercihleri henüz uygulanmadı.
+Dört fazın kodu tamamdır (15 Ekim 2026):
 
-Kullanıcı mevcut uygulamanın yayında olduğunu bildirdi. Bu revizyonun dağıtım hedefi/adresi henüz verilmedi; yerel doğrulama canlı deploy kanıtı sayılmaz. Dağıtım akışı [[Operasyon/CI CD]] içindedir.
+- **Kurulum:** manifest, simgeler, yalnız genel çevrimdışı sayfayı saklayan service worker, Profilim'de kurulum kartı. Genel Bakış'ta kurulmamış cihaza kurulum, kurulu cihaza bildirim açma önerisi çıkar; kapatılınca o tarayıcıda bir daha gösterilmez.
+- **Cihaz ve tercih:** `push_subscriptions` oturuma bağlıdır; çıkış ve pasifleştirme aboneliği siler. Tercihler hesap düzeyindedir: genel aç/kapat, atama, inceleme, karar, hatırlatma.
+- **Olaylar:** atama/sorumlu değişimi → yeni sorumlu; incelemeye gönderim → komite başkanları; onay, düzeltme isteği ve yeniden açma → sorumlu. SQLite outbox aynı transaction'da yazılır, gönderici 5 sn'de bir çalışır, gönderim anında yetki/tercih/oturum yeniden kontrol edilir.
+- **Hatırlatma:** son tarihten 24 saat önce tek bildirim; 22:00–09:00 İstanbul arasına düşerse 09:00'a kayar. Tekillik anahtarı görev + son tarihtir: son tarih değişirse eski hatırlatma atlanır, yenisi planlanır. İncelemedeki/tamamlanan görev ve hatırlatma anından sonra açılan görev hatırlatılmaz.
+- **Metin:** kilit ekranında yalnız tür yazar (“Sana yeni bir görev atandı.”, “İncelemeni bekleyen bir teslim var.”, “Görevin onaylandı.”, “Görevin düzeltme için sana geri döndü.”, “Bir görevinin son tarihi yaklaşıyor.”). Service worker bu sabit listeden başka metni genel cümleyle değiştirir; tıklama yalnız uygulama içi görev adresini açar.
+- **Anahtar:** `PUSH_ENABLED=true` + `VAPID_SUBJECT` ile iki anahtar boş bırakılırsa sunucu ilk açılışta bir çift üretip `app_settings` tablosunda saklar; özel anahtar sunucudan çıkmaz ve yedeklerle birlikte korunur. Anahtar değişirse bütün cihazlar bildirimi yeniden açmalıdır.
+
+Canlı adres `https://manage.gdgostimtech.com` (VeriTeknik `video-sunucu`, nginx + Let's Encrypt, `/opt/gdg-manage` Compose kurulumu). Otomatik testler Chromium'da tarayıcı API'lerini taklit eder; gerçek iPhone/Android teslimi canlıda ayrıca denenmelidir.
 
 ## Faz 1 — Hızlı kurulabilir uygulama
 

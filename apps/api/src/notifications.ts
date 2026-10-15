@@ -6,12 +6,12 @@ import type { Express, RequestHandler } from 'express';
 import type Database from 'better-sqlite3';
 import webpush from 'web-push';
 import { plainObject } from './access.js';
-import type { Config } from './config.js';
+import { assertVapidPair, type Config } from './config.js';
 import { HttpError } from './errors.js';
 
-type Kind = 'assignment' | 'review' | 'decision';
-export type Preferences = { enabled: boolean; assignment: boolean; review: boolean; decision: boolean };
-const defaults: Preferences = { enabled: false, assignment: true, review: true, decision: true };
+type Kind = 'assignment' | 'review' | 'decision' | 'reminder';
+export type Preferences = { enabled: boolean; assignment: boolean; review: boolean; decision: boolean; reminder: boolean };
+const defaults: Preferences = { enabled: false, assignment: true, review: true, decision: true, reminder: true };
 const preferenceKeys = Object.keys(defaults) as Array<keyof Preferences>;
 type Subscription = { id: string; user_id: string; session_id: string; endpoint: string; p256dh: string; auth: string };
 type Job = { id: string; event_id: string; subscription_id: string; task_id: string | null; kind: Kind | 'test'; attempts: number; created_at: number };
@@ -53,10 +53,56 @@ function sender(config: NonNullable<Config['push']>): PushSender {
   });
 }
 
+/**
+ * The key pair is created once and kept with the data, so restarts and image updates keep every device
+ * subscription valid. The private key never leaves the server; backups carry it like any other server secret.
+ */
+export function storedVapidKeys(db: Database.Database): { publicKey: string; privateKey: string } {
+  const read = () => db.prepare("SELECT value FROM app_settings WHERE key = 'vapid_keys'").get() as { value: string } | undefined;
+  if (!read()) {
+    const keys = webpush.generateVAPIDKeys();
+    db.prepare("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('vapid_keys', ?)").run(JSON.stringify(keys));
+  }
+  const { publicKey, privateKey } = JSON.parse(read()!.value) as { publicKey: string; privateKey: string };
+  assertVapidPair(publicKey, privateKey);
+  return { publicKey, privateKey };
+}
+
 export function notificationPreferences(db: Database.Database, userId: string): Preferences {
-  const row = db.prepare('SELECT enabled, assignment, review, decision FROM notification_preferences WHERE user_id = ?').get(userId) as Record<keyof Preferences, number> | undefined;
+  const row = db.prepare('SELECT enabled, assignment, review, decision, reminder FROM notification_preferences WHERE user_id = ?').get(userId) as Record<keyof Preferences, number> | undefined;
   return row ? Object.fromEntries(preferenceKeys.map(key => [key, row[key] === 1])) as Preferences : { ...defaults };
 }
+
+/** Lock-screen text names the kind of update only; titles, people and comments never leave the app. */
+export const pushMessages = {
+  test: 'Bu cihazda bildirimler çalışıyor.',
+  assignment: 'Sana yeni bir görev atandı.',
+  review: 'İncelemeni bekleyen bir teslim var.',
+  approved: 'Görevin onaylandı.',
+  returned: 'Görevin düzeltme için sana geri döndü.',
+  reminder: 'Bir görevinin son tarihi yaklaşıyor.',
+} as const;
+
+const HOUR = 3_600_000;
+const ISTANBUL_OFFSET = 3 * HOUR; // Türkiye has used UTC+3 all year since 2016.
+
+/**
+ * One reminder 24 hours before the deadline. A reminder that would arrive between 22:00 and 09:00
+ * Istanbul time waits for 09:00; it is dropped when that is no longer before the deadline.
+ */
+export function reminderTime(dueAt: string): number | null {
+  const due = Date.parse(dueAt);
+  if (!Number.isFinite(due)) return null;
+  const local = new Date(due - 24 * HOUR + ISTANBUL_OFFSET);
+  const hour = local.getUTCHours();
+  if (hour >= 22 || hour < 9) {
+    if (hour >= 22) local.setUTCDate(local.getUTCDate() + 1);
+    local.setUTCHours(9, 0, 0, 0);
+  }
+  const at = local.getTime() - ISTANBUL_OFFSET;
+  return at < due ? at : null;
+}
+const reminderEvent = (taskId: string, dueAt: string) => `${taskId}:${dueAt}:reminder`;
 
 /** Called inside the task mutation's transaction; no network requests or timers here. */
 export function enqueueTaskNotification(db: Database.Database, taskId: string, kind: Kind, actorId: string) {
@@ -85,10 +131,37 @@ export function createNotifications(db: Database.Database, config: Config, send:
   };
   const finish = (id: string, state: string) => db.prepare('UPDATE notification_outbox SET state = ?, completed_at = ?, lease_until = NULL WHERE id = ?').run(state, Date.now(), id);
 
+  let lastReminderScan = 0;
+  /** Queues due reminders; the event id carries the deadline, so a changed deadline gets its own single reminder. */
+  function scheduleReminders(now = Date.now()) {
+    lastReminderScan = now;
+    // A reminder is never earlier than 24 hours before the deadline, so later deadlines cannot be due yet.
+    const tasks = db.prepare(`SELECT t.id, t.assignee_id AS assigneeId, t.due_at AS dueAt, t.created_at AS createdAt FROM tasks t
+      JOIN committees c ON c.id = t.committee_id
+      WHERE t.archived_at IS NULL AND c.archived_at IS NULL AND t.status IN ('todo','in_progress')
+        AND t.due_at IS NOT NULL AND t.due_at > ? AND t.due_at <= ?`)
+      .all(new Date(now).toISOString(), new Date(now + 24 * HOUR).toISOString()) as Array<{ id: string; assigneeId: string; dueAt: string; createdAt: string }>;
+    const insert = db.prepare(`INSERT OR IGNORE INTO notification_outbox (id, event_id, subscription_id, task_id, kind, next_at, created_at)
+      VALUES (?, ?, ?, ?, 'reminder', ?, ?)`);
+    db.transaction(() => {
+      for (const task of tasks) {
+        const at = reminderTime(task.dueAt);
+        // A task created after its reminder moment already announced itself through the assignment.
+        if (at === null || at > now || at < Date.parse(task.createdAt)) continue;
+        const prefs = notificationPreferences(db, task.assigneeId);
+        if (!prefs.enabled || !prefs.reminder) continue;
+        for (const { id } of db.prepare('SELECT id FROM push_subscriptions WHERE user_id = ?').all(task.assigneeId) as Array<{ id: string }>) {
+          insert.run(randomUUID(), reminderEvent(task.id, task.dueAt), id, task.id, now, now);
+        }
+      }
+    })();
+  }
+
   async function drain() {
     if (!configured || running || disposed) return;
     running = true;
     try {
+      if (Date.now() - lastReminderScan >= 60_000) scheduleReminders();
       // A send timeout is 10s, while the durable lease is 60s. Crashed workers can be retried.
       for (let count = 0; count < 20 && !disposed; count++) {
         const now = Date.now();
@@ -105,21 +178,23 @@ export function createNotifications(db: Database.Database, config: Config, send:
         const prefs = notificationPreferences(db, sub.user_id);
         if (!prefs.enabled || (job.kind !== 'test' && !prefs[job.kind])) { finish(job.id, 'skipped'); continue; }
         let url = '/profilim';
+        let body: string = pushMessages.test;
         if (job.task_id) {
-          const task = db.prepare(`SELECT t.committee_id, t.assignee_id, t.status, m.role FROM tasks t
+          const task = db.prepare(`SELECT t.committee_id, t.assignee_id, t.status, t.due_at, m.role FROM tasks t
             JOIN committees c ON c.id = t.committee_id
             JOIN committee_memberships m ON m.committee_id = t.committee_id AND m.user_id = ?
-            WHERE t.id = ? AND t.archived_at IS NULL AND c.archived_at IS NULL`).get(sub.user_id, job.task_id) as { committee_id: string; assignee_id: string; status: string; role: string } | undefined;
-          if (!task || (job.kind === 'review' ? task.role !== 'lead' || task.status !== 'in_review' : task.assignee_id !== sub.user_id)) {
-            finish(job.id, 'skipped'); continue;
-          }
+            WHERE t.id = ? AND t.archived_at IS NULL AND c.archived_at IS NULL`).get(sub.user_id, job.task_id) as { committee_id: string; assignee_id: string; status: string; due_at: string | null; role: string } | undefined;
+          const stale = !task || (job.kind === 'review' ? task.role !== 'lead' || task.status !== 'in_review' : task.assignee_id !== sub.user_id)
+            // A reminder is void once the work is submitted or the deadline it was planned for has moved.
+            || (job.kind === 'reminder' && (!['todo', 'in_progress'].includes(task.status) || !task.due_at || job.event_id !== reminderEvent(job.task_id, task.due_at)));
+          if (stale) { finish(job.id, 'skipped'); continue; }
           url = `/panolar?komite=${encodeURIComponent(task.committee_id)}&gorev=${encodeURIComponent(job.task_id)}`;
+          body = job.kind === 'decision' ? (task.status === 'done' ? pushMessages.approved : pushMessages.returned) : pushMessages[job.kind as Exclude<Kind, 'decision'>];
         }
         if (!validPushEndpoint(sub.endpoint)) { db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(sub.id); continue; }
         try {
           await send!({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, {
-            title: 'GDG OSTİM', body: job.kind === 'test' ? 'Bu cihazda bildirimler çalışıyor.' : 'Çalışma alanında bir güncelleme var.',
-            url, tag: `gdg-${job.event_id}`,
+            title: 'GDG OSTİM', body, url, tag: `gdg-${job.event_id}`,
           });
           if (disposed) break;
           finish(job.id, 'sent');
@@ -150,8 +225,9 @@ export function createNotifications(db: Database.Database, config: Config, send:
       if (body.enabled === true) requireConfigured();
       const next = { ...notificationPreferences(db, res.locals.user.id), ...body } as Preferences;
       db.transaction(() => {
-        db.prepare(`INSERT INTO notification_preferences (user_id, enabled, assignment, review, decision) VALUES (?, ?, ?, ?, ?)
-          ON CONFLICT(user_id) DO UPDATE SET enabled = excluded.enabled, assignment = excluded.assignment, review = excluded.review, decision = excluded.decision`)
+        db.prepare(`INSERT INTO notification_preferences (user_id, enabled, assignment, review, decision, reminder) VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(user_id) DO UPDATE SET enabled = excluded.enabled, assignment = excluded.assignment, review = excluded.review,
+            decision = excluded.decision, reminder = excluded.reminder`)
           .run(res.locals.user.id, ...preferenceKeys.map(key => Number(next[key])));
         // Do not replay old notifications after a preference is switched off and later re-enabled.
         for (const key of preferenceKeys.filter(key => !next[key])) db.prepare(`UPDATE notification_outbox SET state = 'skipped', completed_at = ?
@@ -206,7 +282,7 @@ export function createNotifications(db: Database.Database, config: Config, send:
       res.status(202).json({ queued: true });
     });
   }
-  return { register, drain, start() {
+  return { register, drain, scheduleReminders, start() {
     if (!configured || timer || disposed) return;
     timer = setInterval(() => { void drain().catch(() => console.warn('Bildirim kuyruğu işlenemedi.')); }, 5000);
     timer.unref();

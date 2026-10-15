@@ -1,6 +1,6 @@
 import { api, ApiError } from './api';
 
-export type NotificationPreferences = { enabled: boolean; assignment: boolean; review: boolean; decision: boolean };
+export type NotificationPreferences = { enabled: boolean; assignment: boolean; review: boolean; decision: boolean; reminder: boolean };
 export type NotificationSettings = { configured: boolean; publicKey: string | null; preferences: NotificationPreferences };
 export const supportsPush = () => window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 

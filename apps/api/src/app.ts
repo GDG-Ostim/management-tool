@@ -12,7 +12,7 @@ import { registerCommitteeRoutes } from './committees.js';
 import { registerTaskRoutes } from './tasks.js';
 import { registerReportRoutes } from './reports.js';
 import { registerTaskDetailRoutes } from './task-details.js';
-import { createNotifications, type PushSender } from './notifications.js';
+import { createNotifications, storedVapidKeys, type PushSender } from './notifications.js';
 
 function throttle(max: number, windowMs: number): RequestHandler {
   const buckets = new Map<string, { count: number; until: number }>();
@@ -32,7 +32,8 @@ export async function createApplication(config: Config, mailer: Mailer = createM
   const db = openDatabase(config.databasePath);
   const auth = await createAuth(config, db, mailer);
   const identity = createIdentityService(auth, db, config.appUrl);
-  const notifications = createNotifications(db, config, pushSender);
+  const push = config.push ?? (config.pushSubject ? { subject: config.pushSubject, ...storedVapidKeys(db) } : undefined);
+  const notifications = createNotifications(db, { ...config, push }, pushSender);
   const app = express();
   app.disable('x-powered-by');
   app.use('/api', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer'); next(); });

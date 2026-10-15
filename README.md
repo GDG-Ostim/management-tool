@@ -10,7 +10,7 @@ GDG OSTİM için tek topluluklu komite ve görev yönetimi: React, Express, Bett
 - **Raporlar:** Kişi, komite ve genel raporlar teslim zamanına göre zamanında/geç sayar.
 - **Kurulum:** Tek Docker servisi, kalıcı SQLite, yedek ve geri yükleme.
 - **İletişim:** Görüntüleme yetkin olan kişilerin e-postaları tıklanabilir mailto bağlantılarıdır.
-- **PWA:** Cihaza kurulum, Profilim ekranında kurulum yardımı ve bağlantı kesilince Türkçe ekran. Görev işlemleri için internet gerekir. Push bildirimleri sonraki fazlardadır; [fazlı plan](vault/Ürün/PWA%20ve%20Bildirimler.md).
+- **PWA ve bildirimler:** Telefona/bilgisayara uygulama olarak kurulur. Görev ataması, inceleme bekleyen teslim, onay/düzeltme kararı ve son tarihe 24 saat kala hatırlatma Web Push ile gelir; tercihler Profilim ekranındadır. Bildirim metni yalnız türü söyler, görev veya kişi bilgisi taşımaz. Görev işlemleri için internet gerekir. Ayrıntı: [PWA ve Bildirimler](vault/Ürün/PWA%20ve%20Bildirimler.md).
 
 - [Public Kanban](https://github.com/orgs/GDG-Ostim/projects/1)
 - [Geliştirme işleri](https://github.com/GDG-Ostim/management-tool/issues)

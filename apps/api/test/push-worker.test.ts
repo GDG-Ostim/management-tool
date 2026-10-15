@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
+import { pushMessages } from '../src/notifications.js';
 
 test('push worker kişisel içerik göstermez ve yalnız izinli uygulama adreslerini açar', async () => {
   const handlers = new Map<string, (event: any) => void>();
@@ -27,6 +28,10 @@ test('push worker kişisel içerik göstermez ve yalnız izinli uygulama adresle
   assert.equal(shown[0].options.data.url, `${origin}/profilim`);
   await dispatch('push', { data: { json: () => { throw new Error('bad payload'); } } });
   assert.equal(shown.length, 2);
+  for (const body of Object.values(pushMessages)) {
+    await dispatch('push', { data: { json: () => ({ body, url: '/panolar?gorev=t1', tag: 'event-2' }) } });
+    assert.equal(shown.at(-1)!.options.body, body);
+  }
   for (const url of ['https://attacker.test/x', '//attacker.test/x', '/api/auth/sign-out', 'javascript:alert(1)']) {
     await dispatch('notificationclick', { notification: { close() {}, data: { url } } });
     assert.equal(opened.at(-1), `${origin}/profilim`);

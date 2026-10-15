@@ -142,6 +142,24 @@ const migrations: Array<{ version: string; sql: string }> = [
       );
       CREATE INDEX notification_outbox_due ON notification_outbox(state, next_at);
   ` },
+  // SQLite cannot widen a CHECK constraint in place, so the outbox is rebuilt with its rows.
+  { version: '006-deadline-reminders', sql: `
+      ALTER TABLE notification_preferences ADD COLUMN reminder INTEGER NOT NULL DEFAULT 1 CHECK (reminder IN (0,1));
+      CREATE TABLE notification_outbox_next (
+        id TEXT PRIMARY KEY, event_id TEXT NOT NULL,
+        subscription_id TEXT NOT NULL REFERENCES push_subscriptions(id) ON DELETE CASCADE,
+        task_id TEXT REFERENCES tasks(id),
+        kind TEXT NOT NULL CHECK (kind IN ('assignment','review','decision','reminder','test')),
+        state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','sending','sent','failed','skipped')),
+        attempts INTEGER NOT NULL DEFAULT 0, next_at INTEGER NOT NULL, lease_until INTEGER,
+        created_at INTEGER NOT NULL, completed_at INTEGER,
+        UNIQUE (event_id, subscription_id)
+      );
+      INSERT INTO notification_outbox_next SELECT id, event_id, subscription_id, task_id, kind, state, attempts, next_at, lease_until, created_at, completed_at FROM notification_outbox;
+      DROP TABLE notification_outbox;
+      ALTER TABLE notification_outbox_next RENAME TO notification_outbox;
+      CREATE INDEX notification_outbox_due ON notification_outbox(state, next_at);
+  ` },
 ];
 
 /** Applies pending migrations in order and returns the versions it applied. */

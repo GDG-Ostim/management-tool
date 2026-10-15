@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import webpush from 'web-push';
 import { startWorkspace } from './helpers.js';
-import { createNotifications, type PushPayload, type PushSender, validPushEndpoint } from '../src/notifications.js';
-import { loadConfig } from '../src/config.js';
+import { createNotifications, pushMessages, reminderTime, storedVapidKeys, type PushPayload, type PushSender, validPushEndpoint } from '../src/notifications.js';
+import { assertVapidPair, loadConfig } from '../src/config.js';
 
 const keys = webpush.generateVAPIDKeys();
 const config = { ...keys, subject: 'mailto:push@example.com' };
@@ -136,6 +136,86 @@ test('kuyruk hata ve restart sonrası devam eder, eşzamanlı göndermez ve 410 
     assert.equal((ws.db.prepare('SELECT state FROM notification_outbox').get() as { state: string }).state, 'sent');
     status = 410; await ws.create(); await ws.drain();
     assert.equal(ws.db.prepare('SELECT 1 FROM push_subscriptions WHERE user_id = ?').get(ws.ids.member), undefined);
+  } finally { await ws.stop(); }
+});
+
+test('anahtarsız etkinleştirmede VAPID çifti bir kez üretilir ve veritabanında korunur', async () => {
+  const env = { BETTER_AUTH_SECRET: 'a'.repeat(32), PUSH_ENABLED: 'true', VAPID_SUBJECT: 'https://gdg.example.test' };
+  assert.deepEqual([loadConfig(env).push, loadConfig(env).pushSubject], [undefined, 'https://gdg.example.test']);
+  assert.throws(() => loadConfig({ ...env, VAPID_PUBLIC_KEY: keys.publicKey }), /VAPID/);
+  const ws = await startWorkspace('gdg-push-keys-', []);
+  try {
+    const first = storedVapidKeys(ws.application.db);
+    assert.deepEqual(storedVapidKeys(ws.application.db), first);
+    assert.doesNotThrow(() => assertVapidPair(first.publicKey, first.privateKey));
+  } finally { await ws.stop(); }
+});
+
+test('hatırlatma son tarihten 24 saat önce, gece saatlerinde 09:00 İstanbul’da planlanır', () => {
+  assert.equal(new Date(reminderTime('2026-10-20T12:00:00.000Z')!).toISOString(), '2026-10-19T12:00:00.000Z');
+  // 23:59 İstanbul son tarihi: bir önceki gece yerine son gün sabah 09:00.
+  assert.equal(new Date(reminderTime('2026-10-20T20:59:59.000Z')!).toISOString(), '2026-10-20T06:00:00.000Z');
+  assert.equal(new Date(reminderTime('2026-10-20T03:30:00.000Z')!).toISOString(), '2026-10-19T06:00:00.000Z');
+  assert.equal(reminderTime('geçersiz'), null);
+});
+
+test('son tarih hatırlatması tektir, tercihe uyar ve son tarih değişince eskisi geçersizleşir', async () => {
+  const sent: PushPayload[] = [];
+  const ws = await workspace(async (_sub, payload) => { sent.push(payload); });
+  const { request, cookies, db } = ws;
+  const reminders = () => sent.filter(payload => payload.body === pushMessages.reminder);
+  try {
+    let task = await ws.create();
+    await ws.drain();
+    assert.deepEqual(sent.map(payload => payload.body), [pushMessages.assignment]);
+    const due = new Date(Date.now() + 2 * 3_600_000).toISOString();
+    task = (await request(`/api/tasks/${task.id}`, cookies.admin, 'PATCH', { version: task.version, dueAt: due })).body;
+    db.prepare('UPDATE tasks SET created_at = ? WHERE id = ?').run(new Date(Date.now() - 3 * 86_400_000).toISOString(), task.id);
+    ws.application.notifications.scheduleReminders(); ws.application.notifications.scheduleReminders();
+    await ws.drain();
+    assert.equal(reminders().length, 1); assert.ok(reminders()[0].url.includes(`gorev=${task.id}`));
+    ws.application.notifications.scheduleReminders(); await ws.drain();
+    assert.equal(reminders().length, 1);
+
+    // A queued reminder for an old deadline is dropped; the new deadline gets its own.
+    db.prepare("UPDATE notification_outbox SET state = 'sent' WHERE kind = 'reminder'").run();
+    ws.application.notifications.scheduleReminders();
+    const moved = new Date(Date.now() + 3 * 3_600_000).toISOString();
+    db.prepare('UPDATE tasks SET due_at = ? WHERE id = ?').run(moved, task.id);
+    db.prepare("UPDATE notification_outbox SET state = 'pending', event_id = ? WHERE kind = 'reminder'").run(`${task.id}:${due}:reminder`);
+    await ws.drain();
+    assert.equal(reminders().length, 1);
+    ws.application.notifications.scheduleReminders(); await ws.drain();
+    assert.equal(reminders().length, 2);
+
+    await request('/api/me/notification-preferences', cookies.member, 'PATCH', { reminder: false });
+    db.prepare('UPDATE tasks SET due_at = ? WHERE id = ?').run(new Date(Date.now() + 4 * 3_600_000).toISOString(), task.id);
+    ws.application.notifications.scheduleReminders(); await ws.drain();
+    assert.equal(reminders().length, 2);
+
+    // Submitted work and tasks created after their reminder moment are not reminded.
+    await request('/api/me/notification-preferences', cookies.member, 'PATCH', { reminder: true });
+    const fresh = (await request('/api/tasks', cookies.admin, 'POST', { committeeId: ws.committee, assigneeId: ws.ids.member, title: 'Yeni', dueAt: new Date(Date.now() + 3_600_000).toISOString() })).body;
+    task = (await request(`/api/tasks/${task.id}`, cookies.member)).body;
+    await request(`/api/tasks/${task.id}/transition`, cookies.member, 'POST', { status: 'in_review', version: task.version });
+    ws.application.notifications.scheduleReminders(); await ws.drain();
+    assert.equal(reminders().length, 2);
+    assert.ok(fresh.id);
+  } finally { await ws.stop(); }
+});
+
+test('bildirim metni türü söyler ama görev, kişi veya yorum içermez', async () => {
+  const sent: PushPayload[] = [];
+  const ws = await workspace(async (_sub, payload) => { sent.push(payload); });
+  const { request, cookies } = ws;
+  try {
+    let task = await ws.create(); await ws.drain();
+    task = (await request(`/api/tasks/${task.id}/transition`, cookies.member, 'POST', { status: 'in_review', version: task.version })).body; await ws.drain();
+    task = (await request(`/api/tasks/${task.id}/transition`, cookies.lead, 'POST', { status: 'in_progress', version: task.version, reason: 'Gizli ret gerekçesi' })).body; await ws.drain();
+    task = (await request(`/api/tasks/${task.id}/transition`, cookies.member, 'POST', { status: 'in_review', version: task.version })).body; await ws.drain();
+    await request(`/api/tasks/${task.id}/transition`, cookies.lead, 'POST', { status: 'done', version: task.version }); await ws.drain();
+    assert.deepEqual(sent.map(payload => payload.body), [pushMessages.assignment, pushMessages.review, pushMessages.returned, pushMessages.review, pushMessages.approved]);
+    assert.ok(!JSON.stringify(sent).includes('Gizli ret gerekçesi')); assert.ok(!JSON.stringify(sent).includes('Özel görev başlığı'));
   } finally { await ws.stop(); }
 });
 
