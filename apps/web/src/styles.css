@@ -139,6 +139,11 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 @media (hover: none) { .scroll-fade-button { display: none; } }
 .board.scroll-fade-viewport { padding-bottom: 10px; }
 .row-menu-popover.opens-up { top: auto; bottom: calc(100% + 4px); }
+.setup-hint { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 14px 14px 14px 16px; border: 1px solid #d2e3fc; border-radius: 12px; background: #f4f8fe; }
+.setup-hint-icon { display: grid; flex: 0 0 auto; width: 40px; height: 40px; place-items: center; border-radius: 10px; color: #174ea6; background: #e8f0fe; }
+.setup-hint > div { flex: 1; min-width: 0; }.setup-hint strong { font-size: 14px; }.setup-hint p { margin: 3px 0 0; color: #5f6368; font-size: 13px; line-height: 1.5; }
+.setup-hint-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
+@media (max-width: 760px) { .setup-hint { flex-wrap: wrap; }.setup-hint > div { flex-basis: calc(100% - 54px); }.setup-hint-actions { width: 100%; }.setup-hint-actions .ui-button.is-primary { flex: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes mascot-in { from { opacity: 0; transform: translateY(10px) scale(.97); } }
 @media (max-height: 680px) and (min-width: 761px) { .sidebar-nav { margin-top: 18px; }.sidebar-help { min-height: 0; padding-right: 14px; }.sidebar-help img { display: none; } }
@@ -207,3 +212,22 @@ textarea.ui-input { min-height: 0; padding: 10px 12px; line-height: 1.5; resize:
 .workspace-sidebar { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }.sidebar-nav { flex: 1 0 auto; }.sidebar-help, .sidebar-footer { flex: 0 0 auto; }
 .activity-card > header a { flex: 0 0 auto; white-space: nowrap; }
 .dialog-form footer .archive-button { margin-right: auto; color: #a50e0e; }.dialog-form footer .archive-button:hover { background: #fce8e6; }
+.email-link { display: block; max-width: 100%; margin-top: 3px; color: #1967d2; font-size: 12px; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; white-space: normal; text-decoration: underline; text-underline-offset: 2px; }
+.email-link:hover { color: #174ea6; }
+.email-link:focus-visible { outline: 2px solid #1967d2; outline-offset: 3px; border-radius: 2px; }
+.task-assignee > span:last-child { white-space: normal; overflow-wrap: anywhere; }
+.task-card footer { flex-wrap: wrap; }
+.task-contact { min-width: 0; font-size: 13px; }
+.account-popover > .email-link { padding: 8px 10px; }
+.install-card h2 { margin: 0; font-size: 16px; }
+.install-card p { color: #5f6368; font-size: 13px; line-height: 1.6; }
+.install-card > small { display: block; margin-top: 12px; color: #5f6368; line-height: 1.5; }
+.notification-card h2 { display: flex; gap: 8px; align-items: center; margin: 0; font-size: 16px; }
+.notification-card p { font-size: 13px; line-height: 1.6; }
+.notification-card header p, .notification-card > small { color: #5f6368; }
+.notification-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.notification-card fieldset { display: grid; gap: 12px; margin: 18px 0; padding: 16px; border: 1px solid #dadce0; border-radius: 10px; }
+.notification-card legend { padding: 0 6px; font-size: 12px; color: #5f6368; }
+.notification-card label { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; }
+.notification-card input { flex-shrink: 0; accent-color: #1967d2; }
+.notification-card > small { display: block; line-height: 1.6; }

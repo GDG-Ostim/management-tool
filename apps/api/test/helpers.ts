@@ -5,6 +5,8 @@ import { createServer } from 'node:http';
 import { createApplication } from '../src/app.js';
 import { bootstrap } from '../src/identity.js';
 import type { PasswordMail } from '../src/mail.js';
+import type { Config } from '../src/config.js';
+import type { PushSender } from '../src/notifications.js';
 
 async function freePort() {
   const probe = createServer();
@@ -16,14 +18,14 @@ async function freePort() {
 }
 
 /** Starts an isolated app with a chief and accepted users signed in through the server API. */
-export async function startWorkspace(prefix: string, people: string[]) {
+export async function startWorkspace(prefix: string, people: string[], push?: { config: NonNullable<Config['push']>; send: PushSender }) {
   const directory = await mkdtemp(join(tmpdir(), prefix));
   const passwordFile = join(directory, 'password.txt');
   await writeFile(passwordFile, 'Guclu-Baslangic-Sifresi-123!');
   const port = await freePort(); const origin = `http://127.0.0.1:${port}`;
   const messages: PasswordMail[] = [];
-  const application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, host: '127.0.0.1', production: false },
-    { async sendPasswordLink(message) { messages.push(message); } });
+  const application = await createApplication({ appUrl: origin, secret: 'test-secret-that-is-at-least-32-characters-long', databasePath: join(directory, 'test.sqlite'), port, host: '127.0.0.1', production: false, push: push?.config },
+    { async sendPasswordLink(message) { messages.push(message); } }, push?.send);
   const server = application.app.listen(port, '127.0.0.1');
   await new Promise<void>((done, fail) => { server.once('listening', done); server.once('error', fail); });
 

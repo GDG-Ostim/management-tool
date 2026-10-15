@@ -1,3 +1,4 @@
+import { EmailLink } from './EmailLink';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { MailCheck, MoreHorizontal, RefreshCw, Search, ShieldCheck, ShieldOff, UserCheck, UserPlus, UserX, UsersRound } from 'lucide-react';
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, Field, Toast, type ToastMessage } from './ui';
@@ -167,7 +168,7 @@ export function Users({ me }: { me: Me }) {
         : <table className="users-table">
           <thead><tr><th scope="col">Kişi</th><th scope="col">Rol</th><th scope="col">Durum</th><th scope="col">Eklenme</th><th scope="col"><span className="sr-only">İşlemler</span></th></tr></thead>
           <tbody>{visible.map(user => <tr key={user.id} className={user.active ? undefined : 'is-inactive'}>
-            <td><div className="user-cell"><Avatar name={user.name} size="small" /><span><strong>{user.name}{user.id === me.id && <em>Sen</em>}</strong><small>{user.email}</small></span></div></td>
+            <td><div className="user-cell"><Avatar name={user.name} size="small" /><span><strong>{user.name}{user.id === me.id && <em>Sen</em>}</strong><EmailLink email={user.email} /></span></div></td>
             <td data-label="Rol">{user.role === 'super_admin' ? <span className="role-label is-admin"><ShieldCheck size={15} />Başkan</span> : <span className="role-label">Üye</span>}</td>
             <td data-label="Durum"><Status user={user} /></td>
             <td data-label="Eklenme" className="muted">{dateFormat.format(new Date(user.createdAt))}</td>

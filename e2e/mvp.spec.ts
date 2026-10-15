@@ -52,6 +52,7 @@ test('başkan davetinden onaylı teslim ve rapora kadar akış çalışır', asy
       await form.getByRole('button', { name: 'Ekle ve davet gönder' }).click();
       await expect(chief.getByRole('dialog')).toBeHidden();
       await expect(chief.getByRole('cell', { name: `${person.name} ${person.email}` })).toBeVisible();
+      await expect(chief.getByRole('link', { name: person.email, exact: true })).toHaveAttribute('href', `mailto:${person.email}`);
     }
     for (const person of Object.values(people)) {
       const { url } = await (await request.get(`/__e2e/mail?email=${encodeURIComponent(person.email)}`)).json() as { url: string };
@@ -76,6 +77,7 @@ test('başkan davetinden onaylı teslim ve rapora kadar akış çalışır', asy
         await chief.getByLabel('Komite rolü', { exact: true }).selectOption({ label: role });
         await chief.getByRole('button', { name: 'Ekle', exact: true }).click();
         await expect(chief.getByLabel(`${person.name} komite rolü`)).toBeVisible();
+        await expect(chief.getByRole('link', { name: person.email, exact: true })).toHaveAttribute('href', `mailto:${person.email}`);
       }
     }
     await chief.context().close();
@@ -92,6 +94,16 @@ test('başkan davetinden onaylı teslim ve rapora kadar akış çalışır', asy
     await member.getByLabel('Son tarih').fill(due);
     await member.getByRole('button', { name: 'Görevi oluştur' }).click();
     await expect(card(member, title)).toBeVisible();
+    const emailLink = card(member, title).getByRole('link', { name: people.member.email, exact: true });
+    await expect(emailLink).toHaveAttribute('href', `mailto:${people.member.email}`);
+    // Prevent opening the OS mail application while verifying the card does not open its dialog.
+    await emailLink.evaluate(link => link.addEventListener('click', event => event.preventDefault(), { once: true }));
+    await emailLink.click();
+    await expect(member.getByRole('dialog')).toBeHidden();
+    const linkedTaskId = await member.evaluate(async () => (await (await fetch('/api/tasks')).json())[0].id as string);
+    await member.goto(`/panolar?gorev=${linkedTaskId}`);
+    await expect(member.getByRole('dialog').getByLabel('Başlık')).toHaveValue(title);
+    await member.getByRole('dialog').getByRole('button', { name: 'Kapat', exact: true }).click();
     await moveCard(member, title, 'Devam ediyor sütununa taşı');
     await expect(member.locator('.board-column', { hasText: 'Devam ediyor' }).getByText(title)).toBeVisible();
     // Members cannot complete their own work.
@@ -174,6 +186,7 @@ test('başkan davetinden onaylı teslim ve rapora kadar akış çalışır', asy
       await member.goto(path);
       await expect(member.getByRole('heading', { level: 1 })).toBeVisible();
       await expectNoPageOverflow(member);
+      await member.screenshot({ path: `test-results/mobile-${path.slice(1) || 'overview'}.png`, fullPage: true });
     }
     await member.getByRole('button', { name: 'Menüyü aç' }).click();
     await expect(member.getByRole('complementary', { name: 'Ana menü' })).toHaveClass(/is-open/);
@@ -186,6 +199,7 @@ test('başkan davetinden onaylı teslim ve rapora kadar akış çalışır', asy
       await chief.goto(path);
       await expect(chief.getByRole('heading', { level: 1 })).toBeVisible();
       await expectNoPageOverflow(chief);
+      await chief.screenshot({ path: `test-results/mobile-${path.slice(1)}.png`, fullPage: true });
     }
     await chief.context().close();
   });

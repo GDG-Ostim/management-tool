@@ -4,6 +4,7 @@ import type Database from 'better-sqlite3';
 import type { Priority, TaskStatus } from '@gdg/shared';
 import { committeeAccess, isActiveMember, isAdmin, plainObject, type Actor } from './access.js';
 import { HttpError } from './errors.js';
+import { enqueueTaskNotification } from './notifications.js';
 
 export const statuses: readonly TaskStatus[] = ['todo', 'in_progress', 'in_review', 'done'];
 const priorities: readonly Priority[] = ['low', 'normal', 'high'];
@@ -12,13 +13,13 @@ export const boardLimits = { open: 1000, done: 200 };
 
 type TaskRow = {
   id: string; committeeId: string; committeeName: string; title: string; description: string;
-  assigneeId: string; assigneeName: string; createdBy: string; status: TaskStatus; priority: string;
+  assigneeId: string; assigneeName: string; assigneeEmail: string; createdBy: string; status: TaskStatus; priority: string;
   dueAt: string | null; version: number; createdAt: string; updatedAt: string; completedAt: string | null;
   lastResolution: string | null; lastResolvedAt: string | null; lastReopenAt: string | null;
 };
 
 const select = `SELECT t.id, t.committee_id AS committeeId, c.name AS committeeName, t.title, t.description,
-    t.assignee_id AS assigneeId, u.name AS assigneeName, t.created_by AS createdBy, t.status, t.priority,
+    t.assignee_id AS assigneeId, u.name AS assigneeName, u.email AS assigneeEmail, t.created_by AS createdBy, t.status, t.priority,
     t.due_at AS dueAt, t.version, t.created_at AS createdAt, t.updated_at AS updatedAt, t.completed_at AS completedAt,
     ls.resolution AS lastResolution, ls.resolved_at AS lastResolvedAt,
     (SELECT max(o.created_at) FROM task_reopens o WHERE o.task_id = t.id) AS lastReopenAt
@@ -116,6 +117,11 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
     }));
   });
 
+  app.get('/api/tasks/:id', requireMember, (req, res) => {
+    const actor = res.locals.user as Actor;
+    res.json(view(load(actor, String(req.params.id)).row, actor));
+  });
+
   app.post('/api/tasks', requireMember, (req, res) => {
     const actor = res.locals.user as Actor;
     const body = plainObject(req.body, ['committeeId', 'title', 'description', 'assigneeId', 'priority', 'dueAt']);
@@ -126,9 +132,12 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
     if (!access.manage && assigneeId !== actor.id) throw new HttpError(403, 'FORBIDDEN', 'Üyeler yalnız kendilerine görev açabilir.');
     if (!isActiveMember(db, assigneeId, access.id)) throw new HttpError(400, 'INVALID_ASSIGNEE', 'Sorumlu bu komitenin aktif üyesi olmalı.');
     const now = new Date().toISOString(); const id = randomUUID();
-    db.prepare(`INSERT INTO tasks (id, committee_id, title, description, assignee_id, created_by, priority, due_at, created_at, updated_at)
+    db.transaction(() => {
+      db.prepare(`INSERT INTO tasks (id, committee_id, title, description, assignee_id, created_by, priority, due_at, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, access.id, text(body.title, 'Başlık', 160, true), text(body.description, 'Açıklama', 10_000, false) ?? '',
-      assigneeId, actor.id, priority(body.priority) ?? 'normal', dueAt(body.dueAt) ?? null, now, now);
+        assigneeId, actor.id, priority(body.priority) ?? 'normal', dueAt(body.dueAt) ?? null, now, now);
+      enqueueTaskNotification(db, id, 'assignment', actor.id);
+    })();
     res.status(201).json(view(load(actor, id).row, actor));
   });
 
@@ -153,6 +162,7 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
       if (!next.title) throw new HttpError(400, 'INVALID_TASK', 'Başlık 1–160 karakter olmalı.');
       db.prepare(`UPDATE tasks SET title = ?, description = ?, assignee_id = ?, priority = ?, due_at = ?, version = version + 1, updated_at = ? WHERE id = ?`)
         .run(next.title, next.description, next.assigneeId, next.priority, next.dueAt, new Date().toISOString(), row.id);
+      if (next.assigneeId !== row.assigneeId) enqueueTaskNotification(db, row.id, 'assignment', actor.id);
       return load(actor, row.id).row;
     })();
     res.json(view(updated, actor));
@@ -214,6 +224,8 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
       }
       db.prepare(`UPDATE tasks SET status = ?, completed_at = ?, completed_by = ?, approved_submission_id = ?, version = version + 1, updated_at = ? WHERE id = ?`)
         .run(target, target === 'done' ? completedAt : null, completedBy, approved, now, row.id);
+      if (target === 'in_review') enqueueTaskNotification(db, row.id, 'review', actor.id);
+      else if (target === 'done' || row.status === 'done' || (row.status === 'in_review' && reason)) enqueueTaskNotification(db, row.id, 'decision', actor.id);
       return load(actor, row.id).row;
     })();
     res.json(view(updated, actor));
@@ -222,11 +234,11 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
   /** Short review history for the task window; anyone who can read the committee can read it. */
   app.get('/api/tasks/:id/reviews', requireMember, (req, res) => {
     const { row } = load(res.locals.user as Actor, String(req.params.id));
-    const submissions = db.prepare(`SELECT s.id, s.submitted_at AS submittedAt, su.name AS submittedBy, au.name AS assigneeName,
-        s.due_at_snapshot AS dueAt, s.resolution, s.resolved_at AS resolvedAt, ru.name AS resolvedBy, s.reason
+    const submissions = db.prepare(`SELECT s.id, s.submitted_at AS submittedAt, su.name AS submittedBy, su.email AS submittedByEmail, au.name AS assigneeName,
+        s.due_at_snapshot AS dueAt, s.resolution, s.resolved_at AS resolvedAt, ru.name AS resolvedBy, ru.email AS resolvedByEmail, s.reason
       FROM task_submissions s JOIN user su ON su.id = s.submitted_by JOIN user au ON au.id = s.assignee_id_snapshot
       LEFT JOIN user ru ON ru.id = s.resolved_by WHERE s.task_id = ? ORDER BY s.submitted_at DESC, s.rowid DESC`).all(row.id) as Array<{ submittedAt: string; dueAt: string | null }>;
-    const reopens = db.prepare(`SELECT o.id, o.created_at AS createdAt, u.name AS actorName, o.reason
+    const reopens = db.prepare(`SELECT o.id, o.created_at AS createdAt, u.name AS actorName, u.email AS actorEmail, o.reason
       FROM task_reopens o JOIN user u ON u.id = o.actor_id WHERE o.task_id = ? ORDER BY o.created_at DESC, o.rowid DESC`).all(row.id);
     res.json({
       submissions: submissions.map(item => ({ ...item, onTime: item.dueAt ? item.submittedAt <= item.dueAt : null })),

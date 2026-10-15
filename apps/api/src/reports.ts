@@ -5,17 +5,17 @@ import { committeeAccess, isAdmin, type Actor } from './access.js';
 import { HttpError } from './errors.js';
 
 type Row = {
-  id: string; title: string; committeeId: string; committeeName: string; assigneeId: string; assigneeName: string;
+  id: string; title: string; committeeId: string; committeeName: string; assigneeId: string; assigneeName: string; assigneeEmail: string;
   status: 'todo' | 'in_progress' | 'in_review' | 'done'; dueAt: string | null; completedAt: string | null; archivedAt: string | null;
-  approvedSubmittedAt: string | null; approvedDue: string | null; approvedAssigneeId: string | null; approvedAssigneeName: string | null;
+  approvedSubmittedAt: string | null; approvedDue: string | null; approvedAssigneeId: string | null; approvedAssigneeName: string | null; approvedAssigneeEmail: string | null;
   pendingSubmittedAt: string | null; pendingDue: string | null; rejections: number; reopens: number; links: string;
 };
 
 const emptySummary = (): Summary => ({ completed: 0, onTime: 0, late: 0, undated: 0, openOverdue: 0, overdueTotal: 0, inReview: 0, open: 0 });
 
-const select = `SELECT t.id, t.title, t.committee_id AS committeeId, c.name AS committeeName, t.assignee_id AS assigneeId, u.name AS assigneeName,
+const select = `SELECT t.id, t.title, t.committee_id AS committeeId, c.name AS committeeName, t.assignee_id AS assigneeId, u.name AS assigneeName, u.email AS assigneeEmail,
     t.status, t.due_at AS dueAt, t.completed_at AS completedAt, t.archived_at AS archivedAt,
-    s.submitted_at AS approvedSubmittedAt, s.due_at_snapshot AS approvedDue, s.assignee_id_snapshot AS approvedAssigneeId, au.name AS approvedAssigneeName,
+    s.submitted_at AS approvedSubmittedAt, s.due_at_snapshot AS approvedDue, s.assignee_id_snapshot AS approvedAssigneeId, au.name AS approvedAssigneeName, au.email AS approvedAssigneeEmail,
     p.submitted_at AS pendingSubmittedAt, p.due_at_snapshot AS pendingDue,
     (SELECT count(*) FROM task_submissions r WHERE r.task_id = t.id AND r.resolution = 'rejected') AS rejections,
     (SELECT count(*) FROM task_reopens o WHERE o.task_id = t.id) AS reopens,
@@ -40,6 +40,7 @@ export function timing(row: Row, now: string): Timing {
 /** Person attribution: completed work belongs to the approved assignee snapshot, open work to the current assignee. */
 const owner = (row: Row) => row.status === 'done' ? row.approvedAssigneeId ?? row.assigneeId : row.assigneeId;
 const ownerName = (row: Row) => row.status === 'done' ? row.approvedAssigneeName ?? row.assigneeName : row.assigneeName;
+const ownerEmail = (row: Row) => row.status === 'done' ? row.approvedAssigneeEmail ?? row.assigneeEmail : row.assigneeEmail;
 
 function summarize(rows: Row[], now: string) {
   const summary = emptySummary();
@@ -59,20 +60,20 @@ function summarize(rows: Row[], now: string) {
 
 const toItem = (row: Row, now: string) => ({
   id: row.id, title: row.title, committeeId: row.committeeId, committeeName: row.committeeName,
-  personId: owner(row), personName: ownerName(row), status: row.status, dueAt: row.status === 'done' ? row.approvedDue : row.dueAt,
+  personId: owner(row), personName: ownerName(row), personEmail: ownerEmail(row), status: row.status, dueAt: row.status === 'done' ? row.approvedDue : row.dueAt,
   submittedAt: row.status === 'done' ? row.approvedSubmittedAt : row.pendingSubmittedAt, completedAt: row.completedAt,
   timing: timing(row, now), rejections: row.rejections, reopens: row.reopens,
   links: JSON.parse(row.links) as Array<{ url: string; label: string }>,
 });
 
-function group(rows: Row[], now: string, key: (row: Row) => string, name: (row: Row) => string) {
-  const groups = new Map<string, { id: string; name: string; rows: Row[] }>();
+function group(rows: Row[], now: string, key: (row: Row) => string, name: (row: Row) => string, email?: (row: Row) => string) {
+  const groups = new Map<string, { id: string; name: string; email?: string; rows: Row[] }>();
   for (const row of rows) {
     const id = key(row);
-    if (!groups.has(id)) groups.set(id, { id, name: name(row), rows: [] });
+    if (!groups.has(id)) groups.set(id, { id, name: name(row), ...(email ? { email: email(row) } : {}), rows: [] });
     groups.get(id)!.rows.push(row);
   }
-  return [...groups.values()].map(item => ({ id: item.id, name: item.name, summary: summarize(item.rows, now) }))
+  return [...groups.values()].map(({ rows: items, ...item }) => ({ ...item, summary: summarize(items, now) }))
     .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 }
 
@@ -90,13 +91,13 @@ export function registerReportRoutes(app: Express, db: Database.Database, guards
     WHERE m.user_id = ? ORDER BY c.name COLLATE NOCASE`).all(userId) as Array<{ id: string; name: string; role: string; archivedAt: string | null }>;
 
   const personReport = (userId: string, scope: string[] | 'all') => {
-    const user = db.prepare('SELECT u.id, u.name, p.active FROM user u JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?').get(userId) as { id: string; name: string; active: number } | undefined;
+    const user = db.prepare('SELECT u.id, u.name, u.email, p.active FROM user u JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?').get(userId) as { id: string; name: string; email: string; active: number } | undefined;
     if (!user) throw new HttpError(404, 'NOT_FOUND', 'Kişi bulunamadı.');
     const now = new Date().toISOString();
     const rows = load(scope).filter(row => owner(row) === userId);
     const committees = memberCommittees(userId).filter(item => scope === 'all' || scope.includes(item.id));
     return {
-      generatedAt: now, person: { id: user.id, name: user.name, active: user.active === 1 }, committees,
+      generatedAt: now, person: { id: user.id, name: user.name, email: user.email, active: user.active === 1 }, committees,
       summary: summarize(rows, now), byCommittee: group(rows, now, row => row.committeeId, row => row.committeeName),
       tasks: rows.map(row => toItem(row, now)),
     };
@@ -122,11 +123,11 @@ export function registerReportRoutes(app: Express, db: Database.Database, guards
     if (!access.manage) throw new HttpError(403, 'FORBIDDEN', 'Komite raporunu yalnız komite başkanı ve başkan görebilir.');
     const now = new Date().toISOString();
     const rows = load([access.id]);
-    const members = db.prepare(`SELECT u.id, u.name, m.role, p.active FROM committee_memberships m JOIN user u ON u.id = m.user_id
-      JOIN user_profiles p ON p.user_id = u.id WHERE m.committee_id = ?`).all(access.id) as Array<{ id: string; name: string; role: string; active: number }>;
-    const people = new Map(members.map(member => [member.id, { id: member.id, name: member.name, role: member.role as string | null, active: member.active === 1 }]));
+    const members = db.prepare(`SELECT u.id, u.name, u.email, m.role, p.active FROM committee_memberships m JOIN user u ON u.id = m.user_id
+      JOIN user_profiles p ON p.user_id = u.id WHERE m.committee_id = ?`).all(access.id) as Array<{ id: string; name: string; email: string; role: string; active: number }>;
+    const people = new Map(members.map(member => [member.id, { id: member.id, name: member.name, email: member.email, role: member.role as string | null, active: member.active === 1 }]));
     // Former members keep their completed history in the committee report.
-    for (const row of rows) if (!people.has(owner(row))) people.set(owner(row), { id: owner(row), name: ownerName(row), role: null, active: false });
+    for (const row of rows) if (!people.has(owner(row))) people.set(owner(row), { id: owner(row), name: ownerName(row), email: ownerEmail(row), role: null, active: false });
     const byPerson = [...people.values()].map(person => ({ ...person, summary: summarize(rows.filter(row => owner(row) === person.id), now) }))
       .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
     res.json({
@@ -148,7 +149,7 @@ export function registerReportRoutes(app: Express, db: Database.Database, guards
       generatedAt: now, memberCount, committeeCount: committees.filter(item => !item.archivedAt).length,
       summary: summarize(rows, now),
       byCommittee: committees.map(item => ({ ...item, summary: summarize(rows.filter(row => row.committeeId === item.id), now) })),
-      byPerson: group(rows, now, owner, ownerName),
+      byPerson: group(rows, now, owner, ownerName, ownerEmail),
     });
   });
 }

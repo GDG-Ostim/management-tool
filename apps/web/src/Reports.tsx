@@ -1,3 +1,7 @@
+import { EmailLink } from './EmailLink';
+import { InstallCard } from './InstallCard';
+import { AppSetupHint } from './AppSetupHint';
+import { NotificationCard } from './NotificationCard';
 import { useState, type FormEvent } from 'react';
 import { ArrowLeft, BarChart3, KeyRound, UsersRound } from 'lucide-react';
 import type { Committee, CommitteeReport, OverviewReport, PersonReport, ReportTask } from './api';
@@ -35,6 +39,7 @@ export function Overview({ me }: { me: Me }) {
   return <>
     <div className="page-title-row"><div><h1>Genel Bakış</h1><p>Hoş geldin, {me.name}. {admin ? 'Topluluğun güncel çalışma durumunu burada görebilirsin.' : 'Sana atanan işlerin güncel durumunu burada görebilirsin.'}</p></div>
       <Button variant="primary" onClick={() => location.assign('/panolar')}>Panolara git</Button></div>
+    <AppSetupHint />
     {(admin ? overall.error : personal.error) ? <LoadError error={(admin ? overall.error : personal.error)!} retry={admin ? overall.retry : personal.retry} />
       : <SummaryCards summary={summary} />}
     {admin && overall.data && <p className="report-meta">{overall.data.committeeCount} aktif komite · {overall.data.memberCount} aktif üye · Sayaçlar bütün komiteleri kapsar.</p>}
@@ -87,10 +92,10 @@ function PasswordCard() {
   </Card>;
 }
 
-function PersonHeader({ report, email, subtitle }: { report: PersonReport; email?: string; subtitle?: string }) {
+function PersonHeader({ report }: { report: PersonReport }) {
   return <Card className="person-card">
     <Avatar name={report.person.name} />
-    <div><strong>{report.person.name}{!report.person.active && <Badge>Pasif</Badge>}</strong><small>{email ?? subtitle}</small></div>
+    <div><strong>{report.person.name}{!report.person.active && <Badge>Pasif</Badge>}</strong><EmailLink email={report.person.email} /></div>
     <ul className="chip-list" aria-label="Komiteler">
       {report.committees.length ? report.committees.map(item => <li key={item.id}>{item.name}<span>{item.archivedAt ? 'Arşiv' : roleName(item.role)}</span></li>)
         : <li className="is-empty">Komite yok</li>}
@@ -103,11 +108,13 @@ export function Profile({ me }: { me: Me }) {
   return <>
     <div className="page-title-row"><div><h1>Profilim</h1><p>Kendi görevlerin, teslimlerin ve temel sayaçların. {data && generated(data.generatedAt)}</p></div></div>
     {error ? <LoadError error={error} retry={retry} /> : <div className="report-stack">
-      {data ? <PersonHeader report={data} email={me.email} /> : <Skeleton />}
+      {data ? <PersonHeader report={data} /> : <Skeleton />}
       <SummaryCards summary={data?.summary ?? null} />
       {data ? <ReportTasks title="Görevlerim" description="Açık işlerin ve onaylanan teslimlerin" tasks={data.tasks} empty="Henüz sana atanmış bir görev yok." /> : <Skeleton />}
       {data && data.byCommittee.length > 1 && <BreakdownTable title="Komitelere göre" rows={data.byCommittee} label="Komite" />}
       <PasswordCard />
+      <InstallCard />
+      <NotificationCard />
     </div>}
   </>;
 }
@@ -119,7 +126,7 @@ function PersonReportView({ id, from }: { id: string; from: string | null }) {
     <BackLink href={back} label={from ? 'Komite raporuna dön' : 'Raporlara dön'} />
     <div className="page-title-row"><div><h1>{data?.person.name ?? 'Kişi raporu'}</h1><p>Görüntüleme yetkin kapsamındaki görevler. {data && generated(data.generatedAt)}</p></div></div>
     {error ? <LoadError error={error} retry={retry} /> : <div className="report-stack">
-      {data ? <PersonHeader report={data} subtitle="Kişi raporu" /> : <Skeleton />}
+      {data ? <PersonHeader report={data} /> : <Skeleton />}
       <SummaryCards summary={data?.summary ?? null} />
       {data ? <>
         <ReportTasks title="Görevler" tasks={data.tasks} empty="Bu kişiye ait görev yok." />

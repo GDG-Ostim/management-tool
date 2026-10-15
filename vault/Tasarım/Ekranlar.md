@@ -1,10 +1,14 @@
 ---
 tur: tasarim
 alan: ui
-guncelleme: 2026-10-13
+guncelleme: 2026-10-15
 ozet: "MVP ekran listesi ve her ekranın işlevi."
 ---
 # Ekranlar
+
+15 Ekim 2026 revizyonu: kişi gösterilen kullanıcı/komite listeleri, görev sorumlusu kartı ve detayı, yorumlar, inceleme geçmişi, profil ve rapor satırlarında adın yanında/altında e-posta görünür ve ayrı bir `mailto:` bağlantısıdır. Adın mevcut rapor bağlantısı korunur; e-posta tıklaması görev penceresini açmaz. Alıcı URL için kodlanır; uygulama mail göndermez, cihazın e-posta uygulamasını açar. E-posta yalnız mevcut API okuma/yetki kapsamındaki kişiler için döner; herkese açık kişi dizini eklenmez. Seçim kutuları ad ve e-postayı metin olarak gösterir; bağlantı görev detayında sunulur.
+
+Profilim ekranındaki kurulum kartı ve PWA davranışının kanonik notu [[Ürün/PWA ve Bildirimler]] içindedir.
 
 | Ekran | İçerik |
 | --- | --- |
