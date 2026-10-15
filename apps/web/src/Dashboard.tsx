@@ -1,3 +1,5 @@
+import { EmailLink } from './EmailLink';
+import { clearBrowserPush, syncPushDevice } from './notifications';
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import {
   ArrowLeft, ArrowRight, BarChart3, ChevronDown, CircleUserRound, FolderKanban,
@@ -66,8 +68,8 @@ function Sidebar({ me, mobileOpen, closeMobile, openOnboarding }: { me: Me; mobi
         <details className="account-menu">
           <summary><Avatar name={me.name} /><span><strong>{me.name}</strong><small>{me.role === 'super_admin' ? 'Başkan' : me.leadsCommittee ? 'Komite başkanı' : 'Üye'}</small></span><ChevronDown size={16} /></summary>
           <div className="account-popover">
-            <span>{me.email}</span>
-            <button onClick={async () => { await authClient.signOut(); location.assign('/giris'); }}><LogOut size={17} />Çıkış yap</button>
+            <EmailLink email={me.email} />
+            <button onClick={async () => { await authClient.signOut(); await clearBrowserPush().catch(() => {}); location.assign('/giris'); }}><LogOut size={17} />Çıkış yap</button>
           </div>
         </details>
       </div>
@@ -139,6 +141,7 @@ function Placeholder({ title }: { title: string }) {
 }
 
 export function Dashboard({ me }: { me: Me }) {
+  useEffect(() => { void syncPushDevice().catch(() => {}); }, [me.id]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(!me.onboardingCompletedAt);
   const [onboardingCompleted, setOnboardingCompleted] = useState(!!me.onboardingCompletedAt);

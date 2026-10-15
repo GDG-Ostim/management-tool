@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { createECDH } from 'node:crypto';
 
 export interface Config {
   appUrl: string;
@@ -9,6 +10,7 @@ export interface Config {
   production: boolean;
   resendKey?: string;
   mailFrom?: string;
+  push?: { subject: string; publicKey: string; privateKey: string };
 }
 
 export function loadConfig(env = process.env): Config {
@@ -23,5 +25,17 @@ export function loadConfig(env = process.env): Config {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Geçersiz PORT.');
   // Containers listen on all interfaces; local runs stay on loopback.
   const host = env.HOST ?? '127.0.0.1';
-  return { appUrl, secret: env.BETTER_AUTH_SECRET, databasePath: resolve(env.DATABASE_PATH ?? 'data/gdg.sqlite'), port, host, production, resendKey: env.RESEND_API_KEY, mailFrom: env.MAIL_FROM };
+  let push: Config['push'];
+  if (env.PUSH_ENABLED && !['true', 'false'].includes(env.PUSH_ENABLED)) throw new Error('PUSH_ENABLED true veya false olmalı.');
+  if (env.PUSH_ENABLED === 'true') {
+    const { VAPID_SUBJECT: subject, VAPID_PUBLIC_KEY: publicKey, VAPID_PRIVATE_KEY: privateKey } = env;
+    try {
+      if (!subject || !publicKey || !privateKey || !/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https:\/\/[^\s]+)$/.test(subject)) throw new Error();
+      if (!/^[A-Za-z0-9_-]+$/.test(publicKey + privateKey) || Buffer.from(privateKey, 'base64url').length !== 32) throw new Error();
+      const key = createECDH('prime256v1'); key.setPrivateKey(Buffer.from(privateKey, 'base64url'));
+      if (key.getPublicKey().toString('base64url') !== publicKey) throw new Error();
+      push = { subject, publicKey, privateKey };
+    } catch { throw new Error('Bildirim için geçerli VAPID_SUBJECT ve eşleşen VAPID anahtarları gerekli.'); }
+  }
+  return { appUrl, secret: env.BETTER_AUTH_SECRET, databasePath: resolve(env.DATABASE_PATH ?? 'data/gdg.sqlite'), port, host, production, resendKey: env.RESEND_API_KEY, mailFrom: env.MAIL_FROM, push };
 }

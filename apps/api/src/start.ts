@@ -32,6 +32,7 @@ if (!application.db.prepare("SELECT 1 FROM app_settings WHERE key = 'bootstrap_c
 }
 
 const server = application.app.listen(config.port, config.host, () => console.log(`Uygulama hazır: ${config.host}:${config.port}`));
+application.notifications.start();
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => server.close(() => { application.close(); process.exit(0); }));
 }

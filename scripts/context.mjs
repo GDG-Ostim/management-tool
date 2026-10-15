@@ -7,7 +7,7 @@ const routes = {
   permissions: ['Ürün/Roller ve Yetkiler', 'Mimari/Veri Modeli'],
   tasks: ['Ürün/Görev Akışı', 'Ürün/Roller ve Yetkiler', 'Mimari/Veri Modeli'],
   reports: ['Ürün/Raporlar', 'Ürün/Roller ve Yetkiler', 'Mimari/Veri Modeli'],
-  ui: ['Tasarım/Arayüz', 'Tasarım/Ekranlar', 'Tasarım/Maskot ve Varlıklar'],
+  ui: ['Tasarım/Arayüz', 'Tasarım/Ekranlar', 'Ürün/PWA ve Bildirimler', 'Tasarım/Maskot ve Varlıklar'],
   ops: ['Operasyon/Çalıştırma ve Teslim', 'Operasyon/GitHub İşleri', 'Sistem/AI Çalışma Düzeni'],
 };
 const topic = process.argv[2];

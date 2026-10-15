@@ -105,6 +105,11 @@
     "ozet": "Kanban geçişleri, görev alanları, inceleme ve yeniden açma davranışı."
   },
   {
+    "path": "vault/Ürün/PWA ve Bildirimler.md",
+    "alan": "ui",
+    "ozet": "Kurulabilir PWA temeli, güvenli çevrimdışı davranış ve fazlı Web Push planı."
+  },
+  {
     "path": "vault/Ürün/Raporlar.md",
     "alan": "reports",
     "ozet": "Tekil görev sayımı, teslim zamanı ve rol kapsamına göre temel raporlar."

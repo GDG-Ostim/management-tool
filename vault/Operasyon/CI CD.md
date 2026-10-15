@@ -1,7 +1,7 @@
 ---
 tur: operasyon
 alan: ops
-guncelleme: 2026-10-13
+guncelleme: 2026-10-15
 ozet: "PR doğrulama, ana dal çıktısı ve Docker sonrası güvenli dağıtım planı."
 ---
 # CI/CD
@@ -28,7 +28,7 @@ Yeni commit aynı branch'teki eski çalışmayı iptal eder. Süre sınırı tak
 CI ilk kez başarıyla çalıştıktan sonra `main` için pull request ve güncel `CI / Validate` kontrolü zorunlu kılınır. Tek geliştiricili akışta zorunlu onay sayısı sıfır tutulur; CI yeşil olan PR doğrudan merge edilir; inceleme istenirse PR bazında yapılır. Force push ve branch silme kapalı tutulur.
 
 ## CD sınırı
-Docker imajı ve Compose kurulumu hazırdır ([[Operasyon/Çalıştırma ve Teslim]]); production sunucu hedefi henüz seçilmediği için CI canlı ortama otomatik gönderim yapmaz. Hedef seçildiğinde ayrı CD hattı eklenir:
+Kullanıcı 15 Ekim 2026 tarihinde uygulamanın yayında olduğunu bildirdi. Mevcut reponun CI hattında otomatik canlı dağıtım yoktur; canlı adres, sunucu ve mevcut dağıtım yöntemi bu oturumda doğrulanamadı. Kullanıcının son yönlendirmesi önce güncellemeyi tamamlamaktır. Bu revizyon için deploy henüz yapılmadı. Docker imajı ve Compose kurulumu hazırdır ([[Operasyon/Çalıştırma ve Teslim]]); hedef netleşince aşağıdaki CD planı mevcut hosting akışına uyarlanır:
 
 1. Sürüm etiketi immutable OCI image üretir; image commit SHA ve sürüm etiketi taşır.
 2. Image taraması geçince digest ile GHCR'a yayınlanır.

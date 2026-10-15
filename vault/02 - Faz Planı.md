@@ -1,12 +1,16 @@
 ---
 tur: plan
 alan: plan
-guncelleme: 2026-10-13
+guncelleme: 2026-10-15
 ozet: "Beş fazda 20 kısa iş ile tamamlanacak MVP geliştirme sırası."
 ---
 # Faz Planı
 
 Fazlar uygulama sırasıdır; takvim veya emek tahmini değildir. Aynı fazdaki işler küçük PR'larla birlikte ilerleyebilir. Issue ayrıntısı ilgili vault notunda tutulur.
+
+## MVP sonrası revizyon
+
+Kurulabilir uygulama, izin/tercihler, görev olayları ve hatırlatmaların aşamalı kapsamı [[Ürün/PWA ve Bildirimler]] içindedir. Aşağıdaki beş faz tamamlanan MVP'nin planıdır.
 
 ## Faz 1 — Temel ve giriş
 Proje iskeleti, SQLite, Better Auth, güvenli ilk başkan, Resend daveti ve komite yetkileri. Çıkış: başkan giriş yapar; davet edilen kullanıcı şifre belirler; komite sınırı API'de uygulanır.

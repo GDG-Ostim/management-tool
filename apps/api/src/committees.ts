@@ -20,7 +20,7 @@ export function registerCommitteeRoutes(app: Express, db: Database.Database, gua
       (SELECT count(*) FROM tasks t WHERE t.committee_id = c.id AND t.archived_at IS NULL AND t.status != 'done') AS openTasks
     FROM committees c`;
   const one = (actor: Actor, id: string) => db.prepare(`${select} WHERE c.id = @id`).get({ actor: actor.id, id }) as CommitteeRow;
-  const members = (id: string) => db.prepare(`SELECT u.id, u.name, m.role, p.active FROM committee_memberships m
+  const members = (id: string) => db.prepare(`SELECT u.id, u.name, u.email, m.role, p.active FROM committee_memberships m
       JOIN user u ON u.id = m.user_id JOIN user_profiles p ON p.user_id = u.id
       WHERE m.committee_id = ? ORDER BY m.role, u.name COLLATE NOCASE`).all(id)
     .map(row => ({ ...(row as { id: string; name: string; role: string; active: number }), active: (row as { active: number }).active === 1 }));

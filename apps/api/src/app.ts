@@ -12,6 +12,7 @@ import { registerCommitteeRoutes } from './committees.js';
 import { registerTaskRoutes } from './tasks.js';
 import { registerReportRoutes } from './reports.js';
 import { registerTaskDetailRoutes } from './task-details.js';
+import { createNotifications, type PushSender } from './notifications.js';
 
 function throttle(max: number, windowMs: number): RequestHandler {
   const buckets = new Map<string, { count: number; until: number }>();
@@ -27,10 +28,11 @@ function throttle(max: number, windowMs: number): RequestHandler {
   };
 }
 
-export async function createApplication(config: Config, mailer: Mailer = createMailer(config)) {
+export async function createApplication(config: Config, mailer: Mailer = createMailer(config), pushSender?: PushSender) {
   const db = openDatabase(config.databasePath);
   const auth = await createAuth(config, db, mailer);
   const identity = createIdentityService(auth, db, config.appUrl);
+  const notifications = createNotifications(db, config, pushSender);
   const app = express();
   app.disable('x-powered-by');
   app.use('/api', (_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer'); next(); });
@@ -64,6 +66,7 @@ export async function createApplication(config: Config, mailer: Mailer = createM
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
     if (!session || !canSignIn(db, session.user.id)) { res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Oturum açmanız gerekiyor.' } }); return; }
     res.locals.user = session.user;
+    res.locals.sessionId = session.session.id;
     next();
   };
   const requireAdmin: RequestHandler = (_req, res, next) => {
@@ -140,6 +143,7 @@ export async function createApplication(config: Config, mailer: Mailer = createM
   registerTaskRoutes(app, db, { requireMember });
   registerReportRoutes(app, db, { requireMember });
   registerTaskDetailRoutes(app, db, { requireMember });
+  notifications.register(app, requireMember, throttle(30, 60_000));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'İşlem bulunamadı.' } }));
   if (config.production) {
     app.use(express.static(resolve('apps/web/dist')));
@@ -151,5 +155,5 @@ export async function createApplication(config: Config, mailer: Mailer = createM
     res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'İşlem tamamlanamadı.' } });
   };
   app.use(handleError);
-  return { app, auth, db, identity, close: () => db.close() };
+  return { app, auth, db, identity, notifications, close: () => { notifications.stop(); db.close(); } };
 }

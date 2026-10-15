@@ -1,3 +1,4 @@
+import { loginPath, safeReturnPath } from './navigation';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { authClient } from './auth-client';
 import { Dashboard, type Me } from './Dashboard';
@@ -30,7 +31,7 @@ function Login() {
     setPending(false);
     if (result.error?.status === 429) setNotice({ kind: 'error', text: 'Çok fazla giriş denemesi yapıldı. Biraz bekleyip yeniden deneyin.' });
     else if (result.error) setNotice({ kind: 'error', text: 'E-posta veya şifre hatalı. Hesabınız henüz etkinleştirilmemiş de olabilir.' });
-    else window.location.assign('/');
+    else window.location.assign(safeReturnPath(new URLSearchParams(location.search).get('next')));
   }
   return <AuthLayout title="Tekrar hoş geldiniz" description="Ekibinizin çalışma alanına giriş yapın.">
     <form onSubmit={submit} className="auth-form">
@@ -93,11 +94,11 @@ function Home() {
   const [me, setMe] = useState<Me | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (!isPending && !data) { window.location.replace('/giris'); return; }
+    if (!isPending && !data) { window.location.replace(loginPath()); return; }
     if (!data) return;
     const controller = new AbortController();
     fetch('/api/me', { signal: controller.signal }).then(async response => {
-      if (response.status === 401) { await authClient.signOut(); location.replace('/giris'); return; }
+      if (response.status === 401) { await authClient.signOut(); location.replace(loginPath()); return; }
       if (!response.ok) throw new Error('profile');
       setMe(await response.json() as Me);
     }).catch(error => { if (error.name !== 'AbortError') setFailed(true); });
@@ -114,3 +115,4 @@ export function App() {
   if (location.pathname === '/sifre-belirle') return <ResetPassword />;
   return <Home />;
 }
+

@@ -1,3 +1,4 @@
+import { EmailLink } from './EmailLink';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { CheckCircle2, Clock3, ListTodo, RotateCw, TriangleAlert } from 'lucide-react';
 import { api, ApiError, type Breakdown, type ReportTask, type Summary, type TaskStatus, type Timing } from './api';
@@ -92,7 +93,7 @@ export function ReportTasks({ title, description, tasks, showPerson = false, sho
           <td><strong>{task.title}</strong>{showCommittee && <small>{task.committeeName}</small>}
             {task.links.length > 0 && <span className="report-links">{task.links.map((link, index) => <a key={`${index}-${link.url}`} href={link.url} target="_blank" rel="noopener noreferrer nofollow">{link.label || new URL(link.url).host}</a>)}</span>}
             {(task.rejections > 0 || task.reopens > 0) && <small className="history-note">{[task.rejections && `${task.rejections} ret`, task.reopens && `${task.reopens} yeniden açma`].filter(Boolean).join(' · ')}</small>}</td>
-          {showPerson && <td data-label="Kişi">{task.personName}</td>}
+          {showPerson && <td data-label="Kişi"><span>{task.personName}</span><EmailLink email={task.personEmail} /></td>}
           <td data-label="Durum"><StatusBadge status={task.status} /></td>
           <td data-label="Son tarih" className="muted">{formatDate(task.dueAt)}</td>
           <td data-label="Teslim" className="muted">{formatDateTime(task.submittedAt)}</td>
@@ -114,7 +115,7 @@ export function BreakdownTable<R extends Breakdown>({ title, description, rows, 
         <tbody>{rows.map(row => {
           const href = link?.(row);
           return <tr key={row.id}>
-            <td>{href ? <a href={href}>{row.name}</a> : <strong>{row.name}</strong>}{extra?.(row)}</td>
+            <td>{href ? <a href={href}>{row.name}</a> : <strong>{row.name}</strong>}{row.email && <EmailLink email={row.email} />}{extra?.(row)}</td>
             <td data-label="Açık">{row.summary.open}</td>
             <td data-label="İncelemede">{row.summary.inReview}</td>
             <td data-label="Tamamlanan">{row.summary.completed}</td>

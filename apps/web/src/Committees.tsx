@@ -1,3 +1,4 @@
+import { EmailLink } from './EmailLink';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Archive, ArchiveRestore, FolderKanban, Pencil, Plus, RefreshCw, UserMinus, UsersRound } from 'lucide-react';
 import { api, errorMessage, type Committee, type CommitteeDetail, type CommitteeRole } from './api';
@@ -73,7 +74,7 @@ function CommitteePanel({ id, users, changed, notify }: { id: string; users: Use
     <h3 className="panel-subtitle">Üyeler <span>{detail.members.length}</span></h3>
     {detail.members.length ? <ul className="member-list">
       {detail.members.map(member => <li key={member.id} className={member.active ? undefined : 'is-inactive'}>
-        <span className="user-cell"><Avatar name={member.name} size="small" /><span><strong>{member.name}</strong>{!member.active && <small>Pasif hesap</small>}</span></span>
+        <span className="user-cell"><Avatar name={member.name} size="small" /><span><strong>{member.name}</strong><EmailLink email={member.email} />{!member.active && <small>Pasif hesap</small>}</span></span>
         <span className="member-controls">
           <select className="ui-input" aria-label={`${member.name} komite rolü`} value={member.role} disabled={busy || archived}
             onChange={event => void setRole(member.id, event.target.value as CommitteeRole, `${member.name} artık ${roleLabel[event.target.value as CommitteeRole].toLocaleLowerCase('tr-TR')}.`)}>

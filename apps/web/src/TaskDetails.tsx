@@ -1,3 +1,4 @@
+import { EmailLink } from './EmailLink';
 import { useEffect, useState, type FormEvent } from 'react';
 import { ExternalLink, Pencil, Plus, Tag, Trash2, X } from 'lucide-react';
 import { api, errorMessage, type TaskDetails as Details } from './api';
@@ -83,7 +84,7 @@ export function TaskDetails({ taskId, version }: { taskId: string; version: numb
       {details.comments.length ? <ol className="comment-list">{details.comments.map(comment => <li key={comment.id}>
         <Avatar name={comment.authorName} size="small" />
         <div>
-          <header><strong>{comment.authorName}</strong><time dateTime={comment.createdAt}>{formatDateTime(comment.createdAt)}{comment.updatedAt !== comment.createdAt && ' · düzenlendi'}</time></header>
+          <header><strong>{comment.authorName}</strong><EmailLink email={comment.authorEmail} /><time dateTime={comment.createdAt}>{formatDateTime(comment.createdAt)}{comment.updatedAt !== comment.createdAt && ' · düzenlendi'}</time></header>
           {editing === comment.id
             ? <form className="comment-edit" onSubmit={submitWith(async data => { const ok = await change(`/comments/${comment.id}`, 'PATCH', { body: String(data.get('body')).trim() }); if (ok) setEditing(null); return ok; })}>
               <textarea className="ui-input" name="body" rows={3} maxLength={5000} required defaultValue={comment.body} aria-label="Yorumu düzenle" autoFocus />

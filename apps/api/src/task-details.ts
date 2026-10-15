@@ -47,7 +47,7 @@ export function registerTaskDetailRoutes(app: Express, db: Database.Database, gu
     const checklist = (db.prepare('SELECT id, text, checked FROM task_checklist_items WHERE task_id = ? ORDER BY position, rowid').all(task.id) as Array<{ id: string; text: string; checked: number }>)
       .map(item => ({ ...item, checked: item.checked === 1 }));
     const links = db.prepare('SELECT id, url, label, created_at AS createdAt FROM task_links WHERE task_id = ? ORDER BY created_at, rowid').all(task.id);
-    const comments = (db.prepare(`SELECT c.id, c.author_id AS authorId, u.name AS authorName, c.body, c.created_at AS createdAt, c.updated_at AS updatedAt
+    const comments = (db.prepare(`SELECT c.id, c.author_id AS authorId, u.name AS authorName, u.email AS authorEmail, c.body, c.created_at AS createdAt, c.updated_at AS updatedAt
       FROM task_comments c JOIN user u ON u.id = c.author_id WHERE c.task_id = ? ORDER BY c.created_at, c.rowid`).all(task.id) as Array<{ authorId: string }>)
       .map(comment => ({ ...comment, mine: comment.authorId === actor.id }));
     const committeeLabels = permissions.labels

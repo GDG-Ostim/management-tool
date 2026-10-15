@@ -1,3 +1,4 @@
+import { EmailLink } from './EmailLink';
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import { Archive, CalendarClock, Flag, GripVertical, MoreHorizontal, Plus, RefreshCw, Search, Undo2, UsersRound } from 'lucide-react';
 import { api, ApiError, errorMessage, type Committee, type CommitteeDetail, type Priority, type Task, type TaskStatus } from './api';
@@ -81,7 +82,7 @@ function TaskCard({ task, me, showCommittee, open, move, dragStart, dragEnd }: {
     <h3 tabIndex={0} role="button" aria-label={`${task.title} görevini aç`} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); } }}>{task.title}</h3>
     {task.returned && <span className="task-returned"><Undo2 size={13} />{task.returned === 'rejected' ? 'Düzeltme istendi' : 'Yeniden açıldı'}</span>}
     <footer>
-      <span className="task-assignee"><Avatar name={task.assigneeName} size="small" /><span>{task.assigneeId === me.id ? 'Sen' : task.assigneeName}</span></span>
+      <span className="task-assignee"><Avatar name={task.assigneeName} size="small" /><span>{task.assigneeId === me.id ? `${task.assigneeName} (sen)` : task.assigneeName}<EmailLink email={task.assigneeEmail} /></span></span>
       <span className="task-meta">
         {task.priority !== 'normal' && <span className={`task-priority is-${task.priority}`}><Flag size={13} />{priorityLabel[task.priority]}</span>}
         <Due task={task} />
@@ -173,7 +174,7 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
         {manage && editable
           ? <select className="ui-input" name="assigneeId" defaultValue={task?.assigneeId ?? me.id} key={`${committeeId}-${members.length}`} required>
               {!members.some(member => member.id === (task?.assigneeId ?? me.id)) && <option value="" disabled>Seç</option>}
-              {members.map(member => <option key={member.id} value={member.id}>{member.id === me.id ? `${member.name} (sen)` : member.name}</option>)}
+              {members.map(member => <option key={member.id} value={member.id}>{member.name}{member.id === me.id ? ' (sen)' : ''} · {member.email}</option>)}
             </select>
           : <input className="ui-input" value={task ? task.assigneeName : `${me.name} (sen)`} disabled readOnly />}
       </label>
@@ -183,6 +184,7 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
         </select></label>
       <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task?.dueAt ?? null)} disabled={!editable || (!!task && !manage)} /></label>
     </div>
+    {task && <div className="task-contact"><span>Sorumlu: {task.assigneeName}</span><EmailLink email={task.assigneeEmail} /></div>}
     {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer>{task && manage && <Button className="archive-button" variant="ghost" onClick={() => void archive()} disabled={pending}><Archive size={16} />Arşivle</Button>}
@@ -212,6 +214,20 @@ export function Board({ me }: { me: Me }) {
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage>(null);
   const closeToast = useCallback(() => setToast(null), []);
+  const [linkedTaskId] = useState(() => new URLSearchParams(location.search).get('gorev'));
+
+  useEffect(() => {
+    const id = linkedTaskId;
+    if (!id) return;
+    let live = true;
+    api<Task>(`/api/tasks/${encodeURIComponent(id)}`).then(task => {
+      if (live) {
+        setEditing(task);
+        const url = new URL(location.href); url.searchParams.delete('gorev'); history.replaceState(null, '', url);
+      }
+    }, reason => { if (live) setToast({ tone: 'error', text: errorMessage(reason, 'Görev açılamadı.') }); });
+    return () => { live = false; };
+  }, [linkedTaskId]);
 
   useEffect(() => {
     api<Committee[]>('/api/committees').then(list => {
@@ -239,7 +255,7 @@ export function Board({ me }: { me: Me }) {
   const active = (committees ?? []).filter(item => !item.archivedAt);
   const current = active.find(item => item.id === selected);
   const canCreate = selected === ALL ? active.length > 0 : !!current;
-  const people = useMemo(() => [...new Map((tasks ?? []).map(task => [task.assigneeId, task.assigneeName])).entries()]
+  const people = useMemo(() => [...new Map((tasks ?? []).map(task => [task.assigneeId, `${task.assigneeName} · ${task.assigneeEmail}`])).entries()]
     .sort((a, b) => a[1].localeCompare(b[1], 'tr')), [tasks]);
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase('tr-TR');
