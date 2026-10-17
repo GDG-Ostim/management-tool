@@ -186,4 +186,22 @@ describe('komite ve görev akışı', () => {
     assert.equal((await request('/api/committees', cookies.outsider)).body.length, 0);
     assert.equal((await request('/api/tasks', cookies.admin, 'POST', { committeeId: otherCommitteeId, title: 'Arşive' })).status, 409);
   });
+
+  test('aynı görev birden fazla kişiye aynı anda açılabilir', async () => {
+    const multi = await request('/api/tasks', cookies.lead, 'POST', {
+      committeeId,
+      title: 'Toplantı hazırlığı',
+      description: 'Gündem maddelerini kontrol edin',
+      assigneeIds: [ids.member, ids.other],
+      priority: 'high',
+    });
+    assert.equal(multi.status, 201);
+    assert.equal(multi.body.length, 2);
+    assert.equal(multi.body[0].title, 'Toplantı hazırlığı');
+    assert.equal(multi.body[1].title, 'Toplantı hazırlığı');
+    assert.deepEqual(multi.body.map((t: { assigneeId: string }) => t.assigneeId).sort(), [ids.member, ids.other].sort());
+
+    assert.equal((await request('/api/tasks', cookies.lead, 'POST', { committeeId, title: 'Boş', assigneeIds: [] })).status, 400);
+    assert.equal((await request('/api/tasks', cookies.member, 'POST', { committeeId, title: 'Yetkisiz', assigneeIds: [ids.member, ids.other] })).status, 403);
+  });
 });
