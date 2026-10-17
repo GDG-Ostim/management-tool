@@ -101,11 +101,12 @@ const fromDateInput = (value: string) => value ? new Date(`${value}T23:59:59`).t
 
 function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved, refreshed, archived }: {
   open: boolean; task: Task | null; me: Me; committees: Committee[]; defaultCommittee: string;
-  close(): void; saved(task: Task, created: boolean): void; refreshed(task: Task): void; archived(task: Task): void;
+  close(): void; saved(task: Task | Task[], created: boolean): void; refreshed(task: Task): void; archived(task: Task): void;
 }) {
   const writable = committees.filter(committee => !committee.archivedAt);
   const [committeeId, setCommitteeId] = useState('');
   const [detail, setDetail] = useState<CommitteeDetail | null>(null);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -114,11 +115,23 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
     setCommitteeId(task?.committeeId ?? (defaultCommittee !== ALL ? defaultCommittee : writable[0]?.id ?? ''));
   }, [open, task]);
   useEffect(() => {
-    if (!open || !committeeId) { setDetail(null); return; }
+    if (!open || !committeeId) { setDetail(null); setSelectedAssignees([]); return; }
     let live = true;
-    api<CommitteeDetail>(`/api/committees/${committeeId}`).then(value => { if (live) setDetail(value); }).catch(() => { if (live) setDetail(null); });
+    api<CommitteeDetail>(`/api/committees/${committeeId}`).then(value => {
+      if (live) {
+        setDetail(value);
+        if (!task) {
+          const activeMembers = value.members.filter(member => member.active);
+          setSelectedAssignees(current => {
+            const valid = current.filter(id => activeMembers.some(m => m.id === id));
+            if (valid.length) return valid;
+            return activeMembers.some(m => m.id === me.id) ? [me.id] : (activeMembers[0] ? [activeMembers[0].id] : []);
+          });
+        }
+      }
+    }).catch(() => { if (live) { setDetail(null); setSelectedAssignees([]); } });
     return () => { live = false; };
-  }, [open, committeeId]);
+  }, [open, committeeId, task, me.id]);
 
   const manage = task ? task.permissions.manage : me.role === 'super_admin' || committees.find(item => item.id === committeeId)?.myRole === 'lead';
   const editable = !task || task.permissions.edit;
@@ -132,12 +145,24 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
       if (data.has('priority')) body.priority = data.get('priority');
       if (data.has('dueAt')) body.dueAt = fromDateInput(String(data.get('dueAt')));
     }
-    if (manage && data.has('assigneeId')) body.assigneeId = data.get('assigneeId');
+    if (task) {
+      if (manage && data.has('assigneeId')) body.assigneeId = data.get('assigneeId');
+    } else {
+      if (manage) {
+        if (!selectedAssignees.length) {
+          setError('En az bir sorumlu seçmelisiniz.');
+          return;
+        }
+        body.assigneeIds = selectedAssignees;
+      } else {
+        body.assigneeId = me.id;
+      }
+    }
     setPending(true); setError(null);
     try {
       const result = task
         ? await api<Task>(`/api/tasks/${task.id}`, { method: 'PATCH', body: JSON.stringify({ ...body, version: task.version }) })
-        : await api<Task>('/api/tasks', { method: 'POST', body: JSON.stringify({ ...body, committeeId }) });
+        : await api<Task | Task[]>('/api/tasks', { method: 'POST', body: JSON.stringify({ ...body, committeeId }) });
       saved(result, !task);
     } catch (reason) {
       if (reason instanceof ApiError && reason.code === 'VERSION_CONFLICT' && reason.current) refreshed(reason.current as Task);
@@ -161,6 +186,8 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
     : task?.status === 'done' ? 'Tamamlanan görev kilitlidir; düzeltme için komite başkanı yeniden açmalı.'
     : task && !editable ? 'Bu görevi yalnız sorumlusu veya komite başkanı düzenleyebilir.' : null;
 
+  const allSelected = members.length > 0 && members.every(member => selectedAssignees.includes(member.id));
+
   const form = <form className="dialog-form task-form" onSubmit={submit} key={task ? `${task.id}-${task.version}` : `new-${committeeId}`}>
     {lockNote && <p className="form-note">{lockNote}</p>}
     {!task && <label className="ui-field"><span>Komite</span>
@@ -169,27 +196,87 @@ function TaskDialog({ open, task, me, committees, defaultCommittee, close, saved
       </select></label>}
     <label className="ui-field"><span>Başlık</span><input className="ui-input" name="title" required maxLength={160} defaultValue={task?.title} disabled={!editable} data-autofocus /></label>
     <label className="ui-field"><span>Açıklama</span><textarea className="ui-input" name="description" rows={4} maxLength={10000} defaultValue={task?.description} disabled={!editable} placeholder="Kısa bağlam, beklenen çıktı veya bağlantılar" /></label>
-    <div className="form-grid">
-      <label className="ui-field"><span>Sorumlu</span>
-        {manage && editable
-          ? <select className="ui-input" name="assigneeId" defaultValue={task?.assigneeId ?? me.id} key={`${committeeId}-${members.length}`} required>
-              {!members.some(member => member.id === (task?.assigneeId ?? me.id)) && <option value="" disabled>Seç</option>}
-              {members.map(member => <option key={member.id} value={member.id}>{member.name}{member.id === me.id ? ' (sen)' : ''} · {member.email}</option>)}
-            </select>
-          : <input className="ui-input" value={task ? task.assigneeName : `${me.name} (sen)`} disabled readOnly />}
-      </label>
-      <label className="ui-field"><span>Öncelik</span>
-        <select className="ui-input" name="priority" defaultValue={task?.priority ?? 'normal'} disabled={!editable || (!!task && !manage)}>
-          {(Object.keys(priorityLabel) as Priority[]).map(value => <option key={value} value={value}>{priorityLabel[value]}</option>)}
-        </select></label>
-      <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task?.dueAt ?? null)} disabled={!editable || (!!task && !manage)} /></label>
-    </div>
+    {task ? (
+      <div className="form-grid">
+        <label className="ui-field"><span>Sorumlu</span>
+          {manage && editable
+            ? <select className="ui-input" name="assigneeId" defaultValue={task.assigneeId} key={`${committeeId}-${members.length}`} required>
+                {!members.some(member => member.id === task.assigneeId) && <option value="" disabled>Seç</option>}
+                {members.map(member => <option key={member.id} value={member.id}>{member.name}{member.id === me.id ? ' (sen)' : ''} · {member.email}</option>)}
+              </select>
+            : <input className="ui-input" value={task.assigneeName} disabled readOnly />}
+        </label>
+        <label className="ui-field"><span>Öncelik</span>
+          <select className="ui-input" name="priority" defaultValue={task.priority} disabled={!editable || !manage}>
+            {(Object.keys(priorityLabel) as Priority[]).map(value => <option key={value} value={value}>{priorityLabel[value]}</option>)}
+          </select></label>
+        <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" defaultValue={toDateInput(task.dueAt)} disabled={!editable || !manage} /></label>
+      </div>
+    ) : (
+      <>
+        <div className="form-grid is-two-cols">
+          <label className="ui-field"><span>Öncelik</span>
+            <select className="ui-input" name="priority" defaultValue="normal">
+              {(Object.keys(priorityLabel) as Priority[]).map(value => <option key={value} value={value}>{priorityLabel[value]}</option>)}
+            </select></label>
+          <label className="ui-field"><span>Son tarih</span><input className="ui-input" type="date" name="dueAt" /></label>
+        </div>
+        {manage && editable ? (
+          <div className="ui-field">
+            <div className="assignee-field-header">
+              <span>Sorumlular {members.length > 0 && <small>({selectedAssignees.length}/{members.length} seçildi)</small>}</span>
+              {members.length > 0 && (
+                <button
+                  type="button"
+                  className="assignee-all-btn"
+                  onClick={() => setSelectedAssignees(allSelected ? [] : members.map(m => m.id))}
+                >
+                  {allSelected ? 'Seçimi temizle' : 'Herkese ata'}
+                </button>
+              )}
+            </div>
+            <div className="assignee-list" role="group" aria-label="Sorumlu üyeler">
+              {members.length === 0 ? (
+                <p className="detail-empty">Bu komitede aktif üye bulunmuyor.</p>
+              ) : (
+                members.map(member => {
+                  const isChecked = selectedAssignees.includes(member.id);
+                  return (
+                    <label key={member.id} className={`assignee-item ${isChecked ? 'is-checked' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setSelectedAssignees(current =>
+                            current.includes(member.id)
+                              ? current.filter(id => id !== member.id)
+                              : [...current, member.id]
+                          );
+                        }}
+                      />
+                      <span className="assignee-name">
+                        {member.name}{member.id === me.id ? ' (sen)' : ''}
+                      </span>
+                      <span className="assignee-email">· {member.email}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ) : (
+          <label className="ui-field"><span>Sorumlu</span>
+            <input className="ui-input" value={`${me.name} (sen)`} disabled readOnly />
+          </label>
+        )}
+      </>
+    )}
     {task && <div className="task-contact"><span>Sorumlu: {task.assigneeName}</span><EmailLink email={task.assigneeEmail} /></div>}
     {task && !manage && editable && <small className="form-hint">Sorumlu, öncelik ve son tarihi komite başkanı değiştirir.</small>}
     {error && <p className="form-error" role="alert">{error}</p>}
     <footer>{task && manage && <Button className="archive-button" variant="ghost" onClick={() => void archive()} disabled={pending}><Archive size={16} />Arşivle</Button>}
       <Button variant="ghost" onClick={close} disabled={pending}>{editable ? 'Vazgeç' : 'Kapat'}</Button>
-      {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : 'Görevi oluştur'}</Button>}</footer>
+      {editable && <Button type="submit" variant="primary" disabled={pending || !committeeId}>{pending ? 'Kaydediliyor…' : task ? 'Kaydet' : selectedAssignees.length > 1 ? `${selectedAssignees.length} kişiye görevi ata` : 'Görevi oluştur'}</Button>}</footer>
   </form>;
 
   return <Dialog open={open} title={task ? (editable ? 'Görevi düzenle' : 'Görev') : 'Yeni görev'} description={task ? `${task.committeeName} · ${statusLabel[task.status]}` : 'Başlık ve sorumlu zorunludur; diğer alanlar isteğe bağlıdır.'} onClose={close} busy={pending} wide={!!task}>
@@ -356,9 +443,27 @@ export function Board({ me }: { me: Me }) {
       </ScrollFade>}
     <TaskDialog open={creating || !!editing} task={editing} me={me} committees={active} defaultCommittee={selected}
       close={() => { setCreating(false); setEditing(null); }}
-      saved={(task, created) => {
-        replace(task); setCreating(false); setEditing(null);
-        setToast({ tone: 'success', text: created ? `“${task.title}” oluşturuldu.` : `“${task.title}” güncellendi.` });
+      saved={(result, created) => {
+        const items = Array.isArray(result) ? result : [result];
+        setTasks(list => {
+          if (!list) return list;
+          let current = list;
+          for (const item of items) {
+            current = current.some(t => t.id === item.id)
+              ? current.map(t => t.id === item.id ? item : t)
+              : [item, ...current];
+          }
+          return current;
+        });
+        setCreating(false); setEditing(null);
+        setToast({
+          tone: 'success',
+          text: created
+            ? items.length > 1
+              ? `${items.length} görev oluşturuldu.`
+              : `“${items[0]?.title}” oluşturuldu.`
+            : `“${items[0]?.title}” güncellendi.`
+        });
       }}
       refreshed={task => { replace(task); setEditing(task); }}
       archived={task => {
