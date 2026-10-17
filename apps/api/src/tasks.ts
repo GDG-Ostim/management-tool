@@ -124,21 +124,47 @@ export function registerTaskRoutes(app: Express, db: Database.Database, guards: 
 
   app.post('/api/tasks', requireMember, (req, res) => {
     const actor = res.locals.user as Actor;
-    const body = plainObject(req.body, ['committeeId', 'title', 'description', 'assigneeId', 'priority', 'dueAt']);
+    const body = plainObject(req.body, ['committeeId', 'title', 'description', 'assigneeId', 'assigneeIds', 'priority', 'dueAt']);
     if (typeof body.committeeId !== 'string') throw new HttpError(400, 'INVALID_TASK', 'Komite seçilmeli.');
     const access = committeeAccess(db, actor, body.committeeId);
     if (access.archivedAt) throw new HttpError(409, 'COMMITTEE_ARCHIVED', 'Arşivlenmiş komiteye görev açılamaz.');
-    const assigneeId = body.assigneeId === undefined ? actor.id : String(body.assigneeId);
-    if (!access.manage && assigneeId !== actor.id) throw new HttpError(403, 'FORBIDDEN', 'Üyeler yalnız kendilerine görev açabilir.');
-    if (!isActiveMember(db, assigneeId, access.id)) throw new HttpError(400, 'INVALID_ASSIGNEE', 'Sorumlu bu komitenin aktif üyesi olmalı.');
-    const now = new Date().toISOString(); const id = randomUUID();
+    const isMulti = Array.isArray(body.assigneeIds);
+    const rawAssigneeIds = isMulti
+      ? (body.assigneeIds as unknown[]).map(String)
+      : body.assigneeId !== undefined
+        ? [String(body.assigneeId)]
+        : [actor.id];
+    if (!rawAssigneeIds.length) throw new HttpError(400, 'INVALID_ASSIGNEE', 'En az bir sorumlu seçilmeli.');
+    const assigneeIds = [...new Set(rawAssigneeIds)];
+    if (!access.manage && (assigneeIds.length !== 1 || assigneeIds[0] !== actor.id)) {
+      throw new HttpError(403, 'FORBIDDEN', 'Üyeler yalnız kendilerine görev açabilir.');
+    }
+    for (const assigneeId of assigneeIds) {
+      if (!isActiveMember(db, assigneeId, access.id)) {
+        throw new HttpError(400, 'INVALID_ASSIGNEE', 'Sorumlu bu komitenin aktif üyesi olmalı.');
+      }
+    }
+    const taskTitle = text(body.title, 'Başlık', 160, true)!;
+    const taskDescription = text(body.description, 'Açıklama', 10_000, false) ?? '';
+    const taskPriority = priority(body.priority) ?? 'normal';
+    const taskDueAt = dueAt(body.dueAt) ?? null;
+    const createdIds: string[] = [];
     db.transaction(() => {
-      db.prepare(`INSERT INTO tasks (id, committee_id, title, description, assignee_id, created_by, priority, due_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, access.id, text(body.title, 'Başlık', 160, true), text(body.description, 'Açıklama', 10_000, false) ?? '',
-        assigneeId, actor.id, priority(body.priority) ?? 'normal', dueAt(body.dueAt) ?? null, now, now);
-      enqueueTaskNotification(db, id, 'assignment', actor.id);
+      for (const assigneeId of assigneeIds) {
+        const id = randomUUID();
+        const now = new Date().toISOString();
+        db.prepare(`INSERT INTO tasks (id, committee_id, title, description, assignee_id, created_by, priority, due_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, access.id, taskTitle, taskDescription,
+          assigneeId, actor.id, taskPriority, taskDueAt, now, now);
+        enqueueTaskNotification(db, id, 'assignment', actor.id);
+        createdIds.push(id);
+      }
     })();
-    res.status(201).json(view(load(actor, id).row, actor));
+    if (isMulti) {
+      res.status(201).json(createdIds.map(id => view(load(actor, id).row, actor)));
+    } else {
+      res.status(201).json(view(load(actor, createdIds[0]).row, actor));
+    }
   });
 
   app.patch('/api/tasks/:id', requireMember, (req, res) => {
