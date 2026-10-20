@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import webpush from 'web-push';
 import { startWorkspace } from './helpers.js';
-import { createNotifications, pushMessages, reminderTime, storedVapidKeys, type PushPayload, type PushSender, validPushEndpoint } from '../src/notifications.js';
+import { createNotifications, isBlockedAddress, pushMessages, reminderTime, storedVapidKeys, type PushPayload, type PushSender, validPushEndpoint } from '../src/notifications.js';
 import { assertVapidPair, loadConfig } from '../src/config.js';
 
 const keys = webpush.generateVAPIDKeys();
@@ -40,6 +40,13 @@ test('VAPID yapılandırması açıkça etkinleşir; yanlış anahtarlar ve push
   assert.throws(() => loadConfig({ ...env, PUSH_ENABLED: 'true', VAPID_SUBJECT: config.subject, VAPID_PUBLIC_KEY: keys.publicKey, VAPID_PRIVATE_KEY: webpush.generateVAPIDKeys().privateKey }), /VAPID/);
   for (const url of ['https://fcm.googleapis.com/fcm/send/x', 'https://updates.push.services.mozilla.com/wpush/v2/x', 'https://web.push.apple.com/Q/x', 'https://wns2-test.notify.windows.com/w/?token=x']) assert.ok(validPushEndpoint(url));
   for (const url of ['http://fcm.googleapis.com/x', 'https://127.0.0.1/x', 'https://fcm.googleapis.com.evil.test/x', 'https://evil.push.apple.com.evil.test/x', 'https://u:p@fcm.googleapis.com/x', 'https://fcm.googleapis.com:444/x', 'https://fcm.googleapis.com/x#y']) assert.equal(validPushEndpoint(url), false);
+  assert.equal(isBlockedAddress('127.0.0.1', 'ipv4'), true);
+  assert.equal(isBlockedAddress('192.168.1.1', 'ipv4'), true);
+  assert.equal(isBlockedAddress('10.0.0.1', 'ipv4'), true);
+  assert.equal(isBlockedAddress('::1', 'ipv6'), true);
+  assert.equal(isBlockedAddress('::ffff:127.0.0.1', 'ipv6'), true);
+  assert.equal(isBlockedAddress('216.239.36.55', 'ipv4'), false); // Google FCM
+  assert.equal(isBlockedAddress('1.1.1.1', 'ipv4'), false);
 });
 
 test('yapılandırılmamış bildirimler açık durum bildirmez ve abonelik açmaz', async () => {
